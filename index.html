@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lufttryck">
+  <link rel="manifest" href="manifest.json">
+  <title>Lufttryck</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060c1a;
+      --surface: #0d1628;
+      --border: rgba(80,160,255,0.15);
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 20%, rgba(59,130,246,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 80% 80%, rgba(6,182,212,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 16px 120px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.4s;
+    }
+    .status-dot.active { background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+    .status-dot.warn { background: var(--warn); }
+
+    /* Big pressure display */
+    .pressure-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px 24px;
+      margin-bottom: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .pressure-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .pressure-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .pressure-value {
+      font-family: var(--mono);
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      background: linear-gradient(135deg, #93c5fd, #67e8f9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: all 0.5s ease;
+    }
+
+    .pressure-unit {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .pressure-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      transition: all 0.4s;
+    }
+
+    .pressure-trend.rising { color: #22c55e; border-color: rgba(34,197,94,0.3); }
+    .pressure-trend.falling { color: #f87171; border-color: rgba(248,113,113,0.3); }
+    .pressure-trend.rapid { color: var(--warn); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.05); }
+
+    /* Alert banner */
+    .alert-banner {
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      animation: shake 0.4s ease;
+    }
+
+    .alert-banner.visible { display: flex; }
+    .alert-icon { font-size: 1.4rem; }
+    .alert-text { font-size: 0.85rem; line-height: 1.4; }
+    .alert-text strong { color: var(--warn); display: block; }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .stat-card .label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .value {
+      font-family: var(--mono);
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .stat-card .value.good { color: #22c55e; }
+    .stat-card .value.warn { color: var(--warn); }
+    .stat-card .value.bad { color: #f87171; }
+
+    /* Chart */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      animation: fadeUp 0.9s ease both;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .chart-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .chart-range {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    canvas#chart {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    /* Settings */
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      animation: fadeUp 1s ease both;
+    }
+
+    .settings-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-label { font-size: 0.9rem; }
+    .setting-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    .setting-input {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 6px 10px;
+      width: 80px;
+      text-align: right;
+    }
+
+    /* Toggle */
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--muted);
+      border-radius: 100px;
+      transition: background 0.3s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--accent); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+
+    /* Source badge */
+    .source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: #93c5fd;
+    }
+
+    /* Action button */
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      margin-bottom: 10px;
+    }
+    .action-btn:active { opacity: 0.85; transform: scale(0.98); }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action-btn.secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* Notification log */
+    .log-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      animation: fadeUp 1.1s ease both;
+    }
+
+    .log-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .log-empty {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .log-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+      animation: fadeUp 0.3s ease both;
+    }
+    .log-item:last-child { border-bottom: none; }
+    .log-time { font-family: var(--mono); color: var(--muted); font-size: 0.7rem; white-space: nowrap; padding-top: 2px; }
+
+    /* Animations */
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+    @keyframes shake { 0%,100% { transform: none; } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+    .install-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🌡️</div>
+      <div>
+        <h1>Lufttryck</h1>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="source-badge" id="sourceBadge">⬤ –</span>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+  </header>
+
+  <div class="alert-banner" id="alertBanner">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-text">
+      <strong id="alertTitle">Snabb tryckökning</strong>
+      <span id="alertMsg">Lufttrycket förändras ovanligt snabbt.</span>
+    </div>
+  </div>
+
+  <div class="pressure-card">
+    <div class="pressure-label">Lufttryck just nu</div>
+    <div class="pressure-value" id="pressureVal">––––</div>
+    <div class="pressure-unit">hPa</div>
+    <div class="pressure-trend" id="trendBadge">⟶ Väntar på data</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">Förändring/min</div>
+      <div class="value" id="changeVal">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Senaste timmen</div>
+      <div class="value" id="hourChange">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Min (idag)</div>
+      <div class="value" id="minVal">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Max (idag)</div>
+      <div class="value" id="maxVal">–</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <span class="chart-title">Senaste mätningarna</span>
+      <span class="chart-range" id="chartRange">–</span>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="settings-card">
+    <div class="settings-title">Inställningar</div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Notiser</div>
+        <div class="setting-sub">Tillåt push-notiser</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="notifToggle">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Tröskel (hPa/min)</div>
+        <div class="setting-sub">Notis skickas om förändring överstiger</div>
+      </div>
+      <input type="number" class="setting-input" id="threshInput" value="0.3" step="0.1" min="0.1" max="5">
+    </div>
+
+    <div class="setting-row">
+      <div>
+        <div class="setting-label">Mätintervall</div>
+        <div class="setting-sub">Sekunder mellan mätningar</div>
+      </div>
+      <input type="number" class="setting-input" id="intervalInput" value="10" step="5" min="5" max="60">
+    </div>
+
+  </div>
+
+  <button class="action-btn" id="startBtn">▶ Starta övervakning</button>
+  <button class="action-btn secondary" id="notifBtn">🔔 Aktivera notiser</button>
+
+  <div class="log-card">
+    <div class="log-title">Händelselogg</div>
+    <div class="log-empty" id="logEmpty">Inga händelser än</div>
+    <div id="logList"></div>
+  </div>
+
+  <p class="install-hint">💡 Tryck på dela-ikonen i webbläsaren → "Lägg till på hemskärmen" för att installera som app</p>
+
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+const state = {
+  readings: [],        // {time, hpa}
+  running: false,
+  timerId: null,
+  notifEnabled: false,
+  source: 'none',      // 'sensor' | 'api' | 'none'
+  lastNotifTime: 0,
+  sensorAvailable: false
+};
+
+// ─── Config ─────────────────────────────────────────────────────────────────
+const cfg = () => ({
+  threshold: parseFloat(document.getElementById('threshInput').value) || 0.3,
+  interval: (parseInt(document.getElementById('intervalInput').value) || 10) * 1000
+});
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const $p = id => document.getElementById(id);
+
+// ─── Sensor check ────────────────────────────────────────────────────────────
+function checkSensor() {
+  return new Promise(resolve => {
+    if (!window.DeviceMotionEvent && !window.AbsoluteOrientationSensor) {
+      // Try DeviceOrientationEvent as proxy for sensor availability
+    }
+    // Check for Barometer / Generic Sensor API
+    if ('Barometer' in window) {
+      try {
+        const b = new Barometer({ frequency: 1 });
+        b.addEventListener('reading', () => {
+          state.sensorAvailable = true;
+          b.stop();
+          resolve(true);
+        });
+        b.addEventListener('error', () => resolve(false));
+        b.start();
+        setTimeout(() => resolve(false), 2000);
+      } catch { resolve(false); }
+    } else {
+      resolve(false);
+    }
+  });
+}
+
+// ─── Sensor reading ──────────────────────────────────────────────────────────
+let barometer = null;
+let latestSensorHpa = null;
+
+function startBarometer() {
+  if (!('Barometer' in window)) return false;
+  try {
+    barometer = new Barometer({ frequency: 0.2 });
+    barometer.addEventListener('reading', () => {
+      latestSensorHpa = barometer.pressure;
+    });
+    barometer.start();
+    return true;
+  } catch { return false; }
+}
+
+// ─── Open-Meteo API ──────────────────────────────────────────────────────────
+async function fetchApiHpa() {
+  try {
+    const pos = await new Promise((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 6000 })
+    );
+    const { latitude: lat, longitude: lon } = pos.coords;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=surface_pressure&wind_speed_unit=ms`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return d.current?.surface_pressure ?? null;
+  } catch { return null; }
+}
+
+// ─── Get pressure (sensor preferred) ────────────────────────────────────────
+async function getPressure() {
+  if (state.sensorAvailable && latestSensorHpa != null) {
+    state.source = 'sensor';
+    return latestSensorHpa;
+  }
+  const api = await fetchApiHpa();
+  if (api != null) { state.source = 'api'; return api; }
+  return null;
+}
+
+// ─── Analysis ────────────────────────────────────────────────────────────────
+function analyze() {
+  const r = state.readings;
+  if (r.length < 2) return { changePerMin: null, hourChange: null };
+
+  const last = r[r.length - 1];
+  const prev = r[r.length - 2];
+  const dtMin = (last.time - prev.time) / 60000;
+  const changePerMin = dtMin > 0 ? (last.hpa - prev.hpa) / dtMin : 0;
+
+  // Hour change
+  const hourAgo = last.time - 3600000;
+  const old = r.find(x => x.time >= hourAgo);
+  const hourChange = old ? last.hpa - old.hpa : null;
+
+  return { changePerMin, hourChange };
+}
+
+// ─── Notify ──────────────────────────────────────────────────────────────────
+function maybeNotify(changePerMin, hpa) {
+  const thresh = cfg().threshold;
+  const absChange = Math.abs(changePerMin);
+  if (absChange < thresh) return;
+
+  // Throttle – max 1 notif per 5 min
+  const now = Date.now();
+  if (now - state.lastNotifTime < 300000) return;
+  state.lastNotifTime = now;
+
+  const dir = changePerMin > 0 ? 'ökar' : 'sjunker';
+  const title = `Snabbt tryckfall`;
+  const body = `Lufttrycket ${dir} med ${absChange.toFixed(2)} hPa/min (nu: ${hpa.toFixed(1)} hPa)`;
+
+  // In-app alert
+  $p('alertTitle').textContent = changePerMin > 0 ? 'Snabb tryckökning ↑' : 'Snabbt tryckfall ↓';
+  $p('alertMsg').textContent = body;
+  $p('alertBanner').classList.add('visible');
+  setTimeout(() => $p('alertBanner').classList.remove('visible'), 8000);
+
+  // Push notification
+  if (state.notifEnabled && Notification.permission === 'granted') {
+    navigator.serviceWorker.ready.then(sw => {
+      sw.showNotification(title, {
+        body,
+        icon: 'icon-192.png',
+        badge: 'icon-192.png',
+        vibrate: [200, 100, 200]
+      });
+    }).catch(() => new Notification(title, { body }));
+  }
+
+  addLog(`${changePerMin > 0 ? '↑' : '↓'} ${body}`);
+}
+
+// ─── UI update ───────────────────────────────────────────────────────────────
+function updateUI() {
+  const r = state.readings;
+  if (!r.length) return;
+
+  const hpa = r[r.length - 1].hpa;
+  const { changePerMin, hourChange } = analyze();
+
+  // Pressure
+  $p('pressureVal').textContent = hpa.toFixed(1);
+
+  // Source
+  $p('sourceBadge').textContent = state.source === 'sensor' ? '⬤ Sensor' : '⬤ API';
+  $p('sourceBadge').style.color = state.source === 'sensor' ? '#6ee7b7' : '#93c5fd';
+
+  // Trend badge
+  const tb = $p('trendBadge');
+  if (changePerMin != null) {
+    const absC = Math.abs(changePerMin);
+    const thresh = cfg().threshold;
+    const sign = changePerMin > 0 ? '↑' : changePerMin < -0.01 ? '↓' : '→';
+    tb.textContent = `${sign} ${absC.toFixed(3)} hPa/min`;
+    if (absC >= thresh) {
+      tb.className = 'pressure-trend rapid';
+    } else if (changePerMin > 0.01) {
+      tb.className = 'pressure-trend rising';
+    } else if (changePerMin < -0.01) {
+      tb.className = 'pressure-trend falling';
+    } else {
+      tb.className = 'pressure-trend';
+    }
+
+    // Change/min stat
+    const cv = $p('changeVal');
+    cv.textContent = (changePerMin >= 0 ? '+' : '') + changePerMin.toFixed(3);
+    cv.className = 'value' + (absC >= thresh ? ' warn' : changePerMin > 0 ? ' good' : ' bad');
+  }
+
+  if (hourChange != null) {
+    const hc = $p('hourChange');
+    hc.textContent = (hourChange >= 0 ? '+' : '') + hourChange.toFixed(1);
+    hc.className = 'value' + (hourChange > 3 || hourChange < -3 ? ' warn' : hourChange > 0 ? ' good' : ' bad');
+  }
+
+  // Min/max
+  const hpaVals = r.map(x => x.hpa);
+  $p('minVal').textContent = Math.min(...hpaVals).toFixed(1);
+  $p('maxVal').textContent = Math.max(...hpaVals).toFixed(1);
+
+  drawChart();
+}
+
+// ─── Chart ───────────────────────────────────────────────────────────────────
+function drawChart() {
+  const canvas = $p('chart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth, H = 120;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  const r = state.readings;
+  if (r.length < 2) return;
+
+  const vals = r.map(x => x.hpa);
+  const minV = Math.min(...vals) - 0.5;
+  const maxV = Math.max(...vals) + 0.5;
+  const range = maxV - minV || 1;
+
+  const toX = i => (i / (r.length - 1)) * W;
+  const toY = v => H - ((v - minV) / range) * (H - 16) - 8;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(80,160,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = H * i / 4;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(59,130,246,0.3)');
+  grad.addColorStop(1, 'rgba(59,130,246,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(toX(0), H);
+  r.forEach((pt, i) => ctx.lineTo(toX(i), toY(pt.hpa)));
+  ctx.lineTo(toX(r.length - 1), H);
+  ctx.closePath();
+  ctx.fill();
+
+  // Line
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  r.forEach((pt, i) => i === 0 ? ctx.moveTo(toX(i), toY(pt.hpa)) : ctx.lineTo(toX(i), toY(pt.hpa)));
+  ctx.stroke();
+
+  // Dots at ends
+  [0, r.length - 1].forEach(i => {
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(toX(i), toY(r[i].hpa), 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Range label
+  $p('chartRange').textContent = `${minV.toFixed(1)}–${maxV.toFixed(1)} hPa`;
+}
+
+// ─── Log ─────────────────────────────────────────────────────────────────────
+function addLog(msg) {
+  $p('logEmpty').style.display = 'none';
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  const t = new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  item.innerHTML = `<span class="log-time">${t}</span><span>${msg}</span>`;
+  $p('logList').prepend(item);
+  // Keep max 20
+  const items = $p('logList').querySelectorAll('.log-item');
+  if (items.length > 20) items[items.length - 1].remove();
+}
+
+// ─── Main loop ───────────────────────────────────────────────────────────────
+async function tick() {
+  const hpa = await getPressure();
+  if (hpa == null) { addLog('❌ Kunde inte hämta lufttryck'); return; }
+
+  state.readings.push({ time: Date.now(), hpa });
+  // Keep 2 hours of data
+  const twoHoursAgo = Date.now() - 7200000;
+  state.readings = state.readings.filter(r => r.time >= twoHoursAgo);
+
+  const { changePerMin } = analyze();
+  if (changePerMin != null) maybeNotify(changePerMin, hpa);
+  updateUI();
+}
+
+// ─── Start/stop ──────────────────────────────────────────────────────────────
+async function toggleMonitoring() {
+  if (state.running) {
+    state.running = false;
+    clearInterval(state.timerId);
+    if (barometer) { try { barometer.stop(); } catch {} }
+    $p('startBtn').textContent = '▶ Starta övervakning';
+    $p('statusDot').className = 'status-dot';
+    addLog('⏹ Övervakning stoppad');
+    return;
+  }
+
+  $p('startBtn').textContent = '⏳ Startar...';
+  $p('startBtn').disabled = true;
+
+  // Check sensor
+  const hasSensor = await checkSensor();
+  if (hasSensor) {
+    startBarometer();
+    addLog('📡 Barometersensor hittad – använder enhetens sensor');
+  } else {
+    addLog('🌐 Ingen sensor – hämtar data via API (Open-Meteo)');
+  }
+
+  state.running = true;
+  $p('startBtn').textContent = '⏹ Stoppa övervakning';
+  $p('startBtn').disabled = false;
+  $p('statusDot').className = 'status-dot active';
+
+  await tick();
+  state.timerId = setInterval(tick, cfg().interval);
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+async function enableNotifications() {
+  if (!('Notification' in window)) { alert('Din webbläsare stödjer inte notiser.'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    state.notifEnabled = true;
+    $p('notifToggle').checked = true;
+    $p('notifBtn').textContent = '✅ Notiser aktiverade';
+    $p('notifBtn').disabled = true;
+    addLog('🔔 Push-notiser aktiverade');
+  } else {
+    addLog('⛔ Notiser nekades av användaren');
+  }
+}
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+$p('startBtn').addEventListener('click', toggleMonitoring);
+$p('notifBtn').addEventListener('click', enableNotifications);
+$p('notifToggle').addEventListener('change', e => {
+  if (e.target.checked) enableNotifications();
+  else state.notifEnabled = false;
+});
+
+// Check if notifications already granted
+if (Notification.permission === 'granted') {
+  state.notifEnabled = true;
+  $p('notifToggle').checked = true;
+  $p('notifBtn').textContent = '✅ Notiser aktiverade';
+  $p('notifBtn').disabled = true;
+}
+
+// Resize chart on window resize
+window.addEventListener('resize', () => { if (state.readings.length) drawChart(); });
+</script>
+</body>
+</html>
