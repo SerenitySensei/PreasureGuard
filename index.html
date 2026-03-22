@@ -388,15 +388,53 @@ function startBarometer() {
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
+// Fallback-koordinater (Vallentuna) om geolocation misslyckas
+const FALLBACK_LAT = 59.5344;
+const FALLBACK_LON = 18.0762;
+
+async function getPosition() {
+  if (!navigator.geolocation) throw new Error('Geolocation stöds ej');
+  return new Promise((res, rej) => {
+    navigator.geolocation.getCurrentPosition(res, rej, {
+      timeout: 10000,
+      maximumAge: 60000,
+      enableHighAccuracy: false
+    });
+  });
+}
+
+async function fetchHpaFromCoords(lat, lon) {
+  const r = await fetch(
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=surface_pressure`,
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  const hpa = d.current?.surface_pressure;
+  if (hpa == null) throw new Error('Inget tryck i svaret');
+  return hpa;
+}
+
 async function fetchApiHpa() {
+  // Försök 1: geolocation
   try {
-    const pos = await new Promise((res, rej) =>
-      navigator.geolocation.getCurrentPosition(res, rej, { timeout: 6000 }));
+    const pos = await getPosition();
     const { latitude: lat, longitude: lon } = pos.coords;
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=surface_pressure`);
-    const d = await r.json();
-    return d.current?.surface_pressure ?? null;
-  } catch { return null; }
+    const hpa = await fetchHpaFromCoords(lat, lon);
+    state.usingFallback = false;
+    return hpa;
+  } catch (e1) {
+    addLog(`⚠️ Plats misslyckades (${e1.message}) – använder Vallentuna`);
+    // Försök 2: fallback-koordinater
+    try {
+      const hpa = await fetchHpaFromCoords(FALLBACK_LAT, FALLBACK_LON);
+      state.usingFallback = true;
+      return hpa;
+    } catch (e2) {
+      addLog(`⚠️ API-fel: ${e2.message}`);
+      return null;
+    }
+  }
 }
 
 async function getPressure() {
