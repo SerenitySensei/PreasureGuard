@@ -392,12 +392,15 @@ function startBarometer() {
 const FALLBACK_LAT = 59.5344;
 const FALLBACK_LON = 18.0762;
 
+// Cachas efter första lyckade GPS-hämtning – positionen låses för hela sessionen
+let cachedLat = null, cachedLon = null;
+
 async function getPosition() {
   if (!navigator.geolocation) throw new Error('Geolocation stöds ej');
   return new Promise((res, rej) => {
     navigator.geolocation.getCurrentPosition(res, rej, {
       timeout: 10000,
-      maximumAge: 60000,
+      maximumAge: 300000,   // acceptera position upp till 5 min gammal
       enableHighAccuracy: false
     });
   });
@@ -416,20 +419,32 @@ async function fetchHpaFromCoords(lat, lon) {
 }
 
 async function fetchApiHpa() {
-  // Försök 1: geolocation
+  // Om vi redan har cachade koordinater – använd dem direkt utan GPS-anrop
+  if (cachedLat !== null) {
+    try {
+      return await fetchHpaFromCoords(cachedLat, cachedLon);
+    } catch (e) {
+      addLog(`⚠️ API-fel: ${e.message}`);
+      return null;
+    }
+  }
+
+  // Första anropet: försök hämta GPS-position
   try {
     const pos = await getPosition();
-    const { latitude: lat, longitude: lon } = pos.coords;
-    const hpa = await fetchHpaFromCoords(lat, lon);
+    cachedLat = pos.coords.latitude;
+    cachedLon = pos.coords.longitude;
+    addLog(`📍 Position låst: ${cachedLat.toFixed(4)}, ${cachedLon.toFixed(4)}`);
     state.usingFallback = false;
-    return hpa;
+    return await fetchHpaFromCoords(cachedLat, cachedLon);
   } catch (e1) {
-    addLog(`⚠️ Plats misslyckades (${e1.message}) – använder Vallentuna`);
-    // Försök 2: fallback-koordinater
+    // GPS misslyckades – lås till Vallentuna som fast position
+    addLog(`⚠️ Plats misslyckades (${e1.message}) – låser till Vallentuna`);
+    cachedLat = FALLBACK_LAT;
+    cachedLon = FALLBACK_LON;
+    state.usingFallback = true;
     try {
-      const hpa = await fetchHpaFromCoords(FALLBACK_LAT, FALLBACK_LON);
-      state.usingFallback = true;
-      return hpa;
+      return await fetchHpaFromCoords(cachedLat, cachedLon);
     } catch (e2) {
       addLog(`⚠️ API-fel: ${e2.message}`);
       return null;
