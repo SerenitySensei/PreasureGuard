@@ -189,8 +189,8 @@
   <div class="stats-grid">
     <div class="stat-card"><div class="label">Förändring/min</div><div class="value" id="changeVal">–</div></div>
     <div class="stat-card"><div class="label">Senaste timmen</div><div class="value" id="hourChange">–</div></div>
-    <div class="stat-card"><div class="label">Min (30 dagar)</div><div class="value" id="minVal">–</div></div>
-    <div class="stat-card"><div class="label">Max (30 dagar)</div><div class="value" id="maxVal">–</div></div>
+    <div class="stat-card"><div class="label">Min (24 tim)</div><div class="value" id="minVal">–</div></div>
+    <div class="stat-card"><div class="label">Max (24 tim)</div><div class="value" id="maxVal">–</div></div>
   </div>
 
   <div class="chart-card">
@@ -337,16 +337,27 @@ async function loadHistory(hours) {
 // ─── Firestore: statistik ────────────────────────────────────────────────────
 async function updateDbStats() {
   try {
-    const since = new Date(Date.now() - THIRTY_DAYS_MS);
-    const q = query(collection(db, COL),
-      where("timestamp", ">=", Timestamp.fromDate(since)),
+    const since30 = new Date(Date.now() - THIRTY_DAYS_MS);
+    const since24 = new Date(Date.now() - 24 * 3600000);
+
+    // Antal mätningar (30 dagar) och äldsta post
+    const q30 = query(collection(db, COL),
+      where("timestamp", ">=", Timestamp.fromDate(since30)),
       orderBy("timestamp", "asc"));
-    const snap = await getDocs(q);
-    $('dbCount').textContent = snap.size;
-    if (snap.size > 0) {
-      const oldest = snap.docs[0].data().timestamp.toDate();
+    const snap30 = await getDocs(q30);
+    $('dbCount').textContent = snap30.size;
+    if (snap30.size > 0) {
+      const oldest = snap30.docs[0].data().timestamp.toDate();
       $('dbOldest').textContent = oldest.toLocaleDateString('sv-SE', { month:'short', day:'numeric' });
-      const vals = snap.docs.map(d => d.data().hpa);
+    }
+
+    // Min/max senaste 24 timmar
+    const q24 = query(collection(db, COL),
+      where("timestamp", ">=", Timestamp.fromDate(since24)),
+      orderBy("timestamp", "asc"));
+    const snap24 = await getDocs(q24);
+    if (snap24.size > 0) {
+      const vals = snap24.docs.map(d => d.data().hpa);
       $('minVal').textContent = Math.min(...vals).toFixed(1);
       $('maxVal').textContent = Math.max(...vals).toFixed(1);
     }
