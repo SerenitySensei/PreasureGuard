@@ -149,9 +149,43 @@
     .log-item:last-child { border-bottom: none; }
     .log-time { font-family: var(--mono); color: var(--muted); font-size: 0.7rem; white-space: nowrap; padding-top: 2px; }
 
+    /* Migränrisk-kort */
+    .migraine-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 20px; margin-bottom: 16px; animation: fadeUp 0.85s ease both;
+      transition: border-color 0.4s;
+    }
+    .migraine-card.risk-low  { border-color: rgba(34,197,94,0.3); }
+    .migraine-card.risk-med  { border-color: rgba(245,158,11,0.4); }
+    .migraine-card.risk-high { border-color: rgba(239,68,68,0.5); }
+    .migraine-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .migraine-title { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .risk-pill { font-family: var(--mono); font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: 100px; transition: all 0.4s; }
+    .risk-pill.low  { background: rgba(34,197,94,0.15);  border: 1px solid rgba(34,197,94,0.3);  color: #86efac; }
+    .risk-pill.med  { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
+    .risk-pill.high { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.4);  color: #fca5a5; animation: pulse-red 1.5s infinite; }
+    .risk-meter { margin-bottom: 14px; }
+    .risk-track { height: 8px; border-radius: 100px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .risk-fill { height: 100%; border-radius: 100px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.4s; background: #22c55e; }
+    .risk-fill.med  { background: linear-gradient(90deg, #22c55e, #f59e0b); }
+    .risk-fill.high { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+    .risk-labels { display: flex; justify-content: space-between; margin-top: 5px; }
+    .risk-label { font-family: var(--mono); font-size: 0.58rem; color: var(--muted); }
+    .risk-factors { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .risk-factor { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+    .risk-factor .rf-label { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .risk-factor .rf-val   { font-family: var(--mono); font-size: 1rem; font-weight: 700; }
+    .rf-val.ok   { color: #86efac; }
+    .rf-val.warn { color: #fcd34d; }
+    .rf-val.bad  { color: #fca5a5; }
+    .risk-desc { font-size: 0.78rem; color: var(--muted); margin-top: 12px; line-height: 1.5; padding: 10px 12px; background: rgba(255,255,255,0.02); border-radius: 10px; border-left: 3px solid var(--border); }
+    .risk-desc.warn { border-left-color: rgba(245,158,11,0.5); color: #e2c97e; }
+    .risk-desc.bad  { border-left-color: rgba(239,68,68,0.5);  color: #f9a8a8; }
+
     @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
     @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+    @keyframes pulse-red { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
     @keyframes shake { 0%,100% { transform: none; } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
     .install-hint { text-align: center; font-size: 0.75rem; color: var(--muted); padding: 12px; }
   </style>
@@ -189,8 +223,32 @@
   <div class="stats-grid">
     <div class="stat-card"><div class="label">Förändring/min</div><div class="value" id="changeVal">–</div></div>
     <div class="stat-card"><div class="label">Senaste timmen</div><div class="value" id="hourChange">–</div></div>
+    <div class="stat-card"><div class="label">Δ sedan igår</div><div class="value" id="dayChange">–</div></div>
     <div class="stat-card"><div class="label">Min (24 tim)</div><div class="value" id="minVal">–</div></div>
     <div class="stat-card"><div class="label">Max (24 tim)</div><div class="value" id="maxVal">–</div></div>
+  </div>
+
+  <!-- Migränrisk-kort -->
+  <div class="migraine-card risk-low" id="migraineCard">
+    <div class="migraine-header">
+      <span class="migraine-title">🧠 Migränrisk</span>
+      <span class="risk-pill low" id="riskPill">Låg risk</span>
+    </div>
+    <div class="risk-meter">
+      <div class="risk-track"><div class="risk-fill" id="riskFill" style="width:5%"></div></div>
+      <div class="risk-labels"><span class="risk-label">0</span><span class="risk-label">Låg</span><span class="risk-label">Medel</span><span class="risk-label">Hög</span></div>
+    </div>
+    <div class="risk-factors">
+      <div class="risk-factor">
+        <div class="rf-label">Δ dygn (hPa)</div>
+        <div class="rf-val ok" id="rfDayChange">–</div>
+      </div>
+      <div class="risk-factor">
+        <div class="rf-label">Trycknivå (hPa)</div>
+        <div class="rf-val ok" id="rfLevel">–</div>
+      </div>
+    </div>
+    <div class="risk-desc" id="riskDesc">Startar övervakning för att bedöma risk…</div>
   </div>
 
   <div class="chart-card">
@@ -226,8 +284,8 @@
       <label class="toggle"><input type="checkbox" id="notifToggle"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Tröskel (hPa/min)</div><div class="setting-sub">Notis om förändring överstiger</div></div>
-      <input type="number" class="setting-input" id="threshInput" value="0.3" step="0.1" min="0.1" max="5">
+      <div><div class="setting-label">Migrän-tröskel (hPa/dygn)</div><div class="setting-sub">Notis vid tryckfall per dygn ≥</div></div>
+      <input type="number" class="setting-input" id="threshInput" value="5" step="0.5" min="1" max="20">
     </div>
     <div class="setting-row">
       <div><div class="setting-label">Mätintervall</div><div class="setting-sub">Sekunder mellan mätningar</div></div>
@@ -473,35 +531,78 @@ async function getPressure() {
 // ─── Analysis ────────────────────────────────────────────────────────────────
 function analyze() {
   const r = state.readings;
-  if (r.length < 2) return { changePerMin: null, hourChange: null };
+  if (r.length < 2) return { changePerMin: null, hourChange: null, dayChange: null };
   const last = r[r.length - 1], prev = r[r.length - 2];
   const dtMin = (last.time - prev.time) / 60000;
   const changePerMin = dtMin > 0 ? (last.hpa - prev.hpa) / dtMin : 0;
-  const old = r.find(x => x.time >= last.time - 3600000);
-  return { changePerMin, hourChange: old ? last.hpa - old.hpa : null };
+  const hourAgo = r.find(x => x.time >= last.time - 3600000);
+  const dayAgo  = r.find(x => x.time >= last.time - 86400000);
+  return {
+    changePerMin,
+    hourChange: hourAgo ? last.hpa - hourAgo.hpa : null,
+    dayChange:  dayAgo  ? last.hpa - dayAgo.hpa  : null
+  };
+}
+
+// ─── Migränrisk ───────────────────────────────────────────────────────────────
+function calcMigraineRisk(hpa, dayChange) {
+  // Baserat på forskning: tryckfall >5 hPa/dygn = förhöjd risk
+  // Nivå <1013 hPa = förhöjd grundrisk
+  let score = 0;
+  let factors = [];
+
+  // Faktor 1: dygnsförändring (viktigast)
+  if (dayChange !== null) {
+    const drop = -dayChange; // positivt värde = tryckfall
+    if (drop >= 5)       { score += 60; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (≥5 = hög risk)`); }
+    else if (drop >= 3)  { score += 30; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (3–5 = medel)`); }
+    else if (drop > 0)   { score += 10; }
+  }
+
+  // Faktor 2: absolut trycknivå
+  if (hpa < 1005)       { score += 30; factors.push(`Lågt tryck ${hpa.toFixed(0)} hPa (<1005)`); }
+  else if (hpa < 1010)  { score += 15; factors.push(`Lågt tryck ${hpa.toFixed(0)} hPa (<1010)`); }
+  else if (hpa < 1013)  { score += 5; }
+
+  // Faktor 3: snabb förändring per minut (sekundärt)
+  // (hanteras av den vanliga tröskeln)
+
+  const level = score >= 60 ? 'high' : score >= 25 ? 'med' : 'low';
+  return { score: Math.min(score, 100), level, factors };
 }
 
 // ─── Notify ──────────────────────────────────────────────────────────────────
-function maybeNotify(changePerMin, hpa) {
-  const thresh = cfg().threshold;
-  const absC = Math.abs(changePerMin);
-  if (absC < thresh) return;
+function maybeNotify(hpa, dayChange, migraineLevel) {
+  const thresh = parseFloat($('threshInput').value) || 5;
   const now = Date.now();
-  if (now - state.lastNotifTime < 300000) return;
+  if (now - state.lastNotifTime < 600000) return; // max 1 per 10 min
+
+  let title = null, body = null;
+
+  // Migränvarning baserat på dygnsförändring
+  if (dayChange !== null && -dayChange >= thresh && migraineLevel !== 'low') {
+    title = migraineLevel === 'high' ? '🧠 Hög migränrisk!' : '🧠 Förhöjd migränrisk';
+    body = `Trycket har sjunkit ${(-dayChange).toFixed(1)} hPa senaste dygnet (nu: ${hpa.toFixed(1)} hPa)`;
+  }
+  // Absolut lågtrycksvarning
+  else if (hpa < 1005 && migraineLevel === 'high') {
+    title = '⚠️ Mycket lågt lufttryck';
+    body = `Trycket är ${hpa.toFixed(1)} hPa – förhöjd migränrisk`;
+  }
+
+  if (!title) return;
   state.lastNotifTime = now;
-  const dir = changePerMin > 0 ? 'ökar' : 'sjunker';
-  const title = changePerMin > 0 ? 'Snabb tryckökning ↑' : 'Snabbt tryckfall ↓';
-  const body = `Lufttrycket ${dir} med ${absC.toFixed(2)} hPa/min (nu: ${hpa.toFixed(1)} hPa)`;
+
   $('alertTitle').textContent = title;
   $('alertMsg').textContent = body;
   $('alertBanner').classList.add('visible');
-  setTimeout(() => $('alertBanner').classList.remove('visible'), 8000);
+  setTimeout(() => $('alertBanner').classList.remove('visible'), 10000);
   if (state.notifEnabled && Notification.permission === 'granted') {
     navigator.serviceWorker?.ready
-      .then(sw => sw.showNotification(title, { body, icon: 'icon-192.png', vibrate: [200,100,200] }))
+      .then(sw => sw.showNotification(title, { body, icon: 'icon-192.png', vibrate: [200,100,200,100,200] }))
       .catch(() => new Notification(title, { body }));
   }
-  addLog(`${changePerMin > 0 ? '↑' : '↓'} ${body}`);
+  addLog(`${title} – ${body}`);
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────────────
@@ -509,25 +610,83 @@ function updateUI() {
   const r = state.readings;
   if (!r.length) return;
   const hpa = r[r.length - 1].hpa;
-  const { changePerMin, hourChange } = analyze();
+  const { changePerMin, hourChange, dayChange } = analyze();
+  const { score, level, factors } = calcMigraineRisk(hpa, dayChange);
+
   $('pressureVal').textContent = hpa.toFixed(1);
   $('sourceBadge').textContent = state.source === 'sensor' ? '⬤ Sensor' : '⬤ API';
   $('sourceBadge').style.color = state.source === 'sensor' ? '#6ee7b7' : '#93c5fd';
+
+  // Trend-badge (per minut – behåll som referens)
   if (changePerMin != null) {
-    const absC = Math.abs(changePerMin), thresh = cfg().threshold;
+    const absC = Math.abs(changePerMin);
     const sign = changePerMin > 0 ? '↑' : changePerMin < -0.01 ? '↓' : '→';
     const tb = $('trendBadge');
     tb.textContent = `${sign} ${absC.toFixed(3)} hPa/min`;
-    tb.className = 'pressure-trend' + (absC >= thresh ? ' rapid' : changePerMin > 0.01 ? ' rising' : changePerMin < -0.01 ? ' falling' : '');
+    tb.className = 'pressure-trend' + (absC > 1 ? ' rapid' : changePerMin > 0.01 ? ' rising' : changePerMin < -0.01 ? ' falling' : '');
     const cv = $('changeVal');
     cv.textContent = (changePerMin >= 0 ? '+' : '') + changePerMin.toFixed(3);
-    cv.className = 'value' + (absC >= thresh ? ' warn' : changePerMin > 0 ? ' good' : ' bad');
+    cv.className = 'value' + (absC > 1 ? ' warn' : changePerMin > 0 ? ' good' : ' bad');
   }
+
+  // Timförändring
   if (hourChange != null) {
     const hc = $('hourChange');
     hc.textContent = (hourChange >= 0 ? '+' : '') + hourChange.toFixed(1);
     hc.className = 'value' + (Math.abs(hourChange) > 3 ? ' warn' : hourChange > 0 ? ' good' : ' bad');
   }
+
+  // Dygnsförändring (Δ sedan igår)
+  if (dayChange != null) {
+    const dc = $('dayChange');
+    dc.textContent = (dayChange >= 0 ? '+' : '') + dayChange.toFixed(1);
+    const absDC = Math.abs(dayChange);
+    dc.className = 'value' + (absDC >= 5 ? ' bad' : absDC >= 3 ? ' warn' : dayChange > 0 ? ' good' : '');
+  } else {
+    $('dayChange').textContent = '< 24h data';
+    $('dayChange').style.fontSize = '0.7rem';
+  }
+
+  // Migränrisk-kort
+  const card = $('migraineCard');
+  const pill = $('riskPill');
+  const fill = $('riskFill');
+  const rfDay = $('rfDayChange');
+  const rfLvl = $('rfLevel');
+  const desc  = $('riskDesc');
+
+  card.className = `migraine-card risk-${level}`;
+  pill.className  = `risk-pill ${level}`;
+  pill.textContent = level === 'high' ? '⚠ Hög risk' : level === 'med' ? '▲ Medel risk' : '✓ Låg risk';
+  fill.style.width = Math.max(3, score) + '%';
+  fill.className = `risk-fill ${level === 'low' ? '' : level}`;
+
+  // Dygnsförändring i migränkortet
+  if (dayChange != null) {
+    const drop = -dayChange;
+    rfDay.textContent = (dayChange >= 0 ? '+' : '') + dayChange.toFixed(1) + ' hPa';
+    rfDay.className = 'rf-val' + (drop >= 5 ? ' bad' : drop >= 3 ? ' warn' : ' ok');
+  } else {
+    rfDay.textContent = '< 24h data';
+    rfDay.className = 'rf-val ok';
+  }
+
+  // Trycknivå
+  rfLvl.textContent = hpa.toFixed(1) + ' hPa';
+  rfLvl.className = 'rf-val' + (hpa < 1005 ? ' bad' : hpa < 1010 ? ' warn' : ' ok');
+
+  // Beskrivning
+  if (level === 'high') {
+    desc.className = 'risk-desc bad';
+    desc.textContent = factors.length ? `Riskfaktorer: ${factors.join('. ')}. Forskning visar att tryckfall ≥5 hPa/dygn ökar migränanfall signifikant.` : 'Förhöjd migränrisk baserat på trycknivå och förändring.';
+  } else if (level === 'med') {
+    desc.className = 'risk-desc warn';
+    desc.textContent = factors.length ? `${factors.join('. ')}.` : 'Viss förhöjd risk – håll koll på trycket.';
+  } else {
+    desc.className = 'risk-desc';
+    desc.textContent = 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.';
+  }
+
   if (state.chartHours === 2) drawChart(state.readings);
 }
 
@@ -585,9 +744,11 @@ async function tick() {
   const hpa = await getPressure();
   if (hpa == null) { addLog('❌ Kunde inte hämta lufttryck'); return; }
   state.readings.push({ time: Date.now(), hpa });
-  state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000);
-  const { changePerMin } = analyze();
-  if (changePerMin != null) maybeNotify(changePerMin, hpa);
+  // Behåll 30 timmar i minnet (för dygnsberäkning + marginal)
+  state.readings = state.readings.filter(r => r.time >= Date.now() - 108000000);
+  const { changePerMin, dayChange } = analyze();
+  const { level } = calcMigraineRisk(hpa, dayChange);
+  maybeNotify(hpa, dayChange, level);
   await saveReading(hpa, changePerMin);
   updateUI();
 }
@@ -650,8 +811,8 @@ window.addEventListener('resize', () => { if (state.readings.length) drawChart(s
 (async () => {
   await ensureAuth();
   await updateDbStats();
-  const hist = await loadHistory(2);
-  if (hist.length > 1) { state.readings = hist; drawChart(hist); }
+  const hist = await loadHistory(30);
+  if (hist.length > 1) { state.readings = hist; drawChart(hist.slice(-120)); }  // Rita senaste 2h i diagrammet
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
   addLog('✅ Firebase Firestore ansluten');
