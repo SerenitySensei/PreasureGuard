@@ -333,7 +333,7 @@ const state = {
   readings: [], running: false, timerId: null,
   notifEnabled: false, source: 'none',
   lastNotifTime: 0, sensorAvailable: false,
-  uid: null, lastSave: null, chartHours: 2
+  uid: null, lastSave: null, chartHours: 2, cachedChartData: null
 };
 
 const cfg = () => ({
@@ -687,7 +687,18 @@ function updateUI() {
     desc.textContent = 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.';
   }
 
-  if (state.chartHours === 2) drawChart(state.readings);
+  // Rita alltid om med rätt data för aktivt filter
+  if (state.chartHours === 2) {
+    drawChart(state.readings);
+  } else if (state.cachedChartData) {
+    // Lägg till senaste mätningen i cachad data om den är nyare
+    const last = state.readings[state.readings.length - 1];
+    const cached = state.cachedChartData;
+    if (!cached.length || last.time > cached[cached.length - 1].time) {
+      state.cachedChartData = [...cached, last];
+    }
+    drawChart(state.cachedChartData);
+  }
 }
 
 // ─── Chart (tidsbaserad x-axel) ─────────────────────────────────────────────
@@ -900,8 +911,14 @@ document.querySelectorAll('.chart-tab').forEach(btn => {
     document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.chartHours = parseInt(btn.dataset.hours);
-    const data = await loadHistory(state.chartHours);
-    drawChart(data.length > 1 ? data : state.readings);
+    if (state.chartHours === 2) {
+      state.cachedChartData = null;
+      drawChart(state.readings);
+    } else {
+      const data = await loadHistory(state.chartHours);
+      state.cachedChartData = data.length > 1 ? data : state.readings;
+      drawChart(state.cachedChartData);
+    }
   });
 });
 
@@ -909,7 +926,13 @@ if (Notification.permission === 'granted') {
   state.notifEnabled = true; $('notifToggle').checked = true;
   $('notifBtn').textContent = '✅ Notiser aktiverade'; $('notifBtn').disabled = true;
 }
-window.addEventListener('resize', () => { if (state.readings.length) drawChart(state.readings); });
+window.addEventListener('resize', () => {
+  if (state.chartHours === 2 || !state.cachedChartData) {
+    if (state.readings.length) drawChart(state.readings);
+  } else {
+    drawChart(state.cachedChartData);
+  }
+});
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 (async () => {
