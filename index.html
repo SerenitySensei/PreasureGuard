@@ -333,7 +333,7 @@ const state = {
   readings: [], running: false, timerId: null,
   notifEnabled: false, source: 'none',
   lastNotifTime: 0, sensorAvailable: false,
-  uid: null, lastSave: null, chartHours: 2, cachedChartData: null
+  uid: null, lastSave: null, chartHours: 2, cachedChartData: null, historyCache: []
 };
 
 const cfg = () => ({
@@ -536,7 +536,11 @@ function analyze() {
   const dtMin = (last.time - prev.time) / 60000;
   const changePerMin = dtMin > 0 ? (last.hpa - prev.hpa) / dtMin : 0;
   const hourAgo = r.find(x => x.time >= last.time - 3600000);
-  const dayAgo  = r.find(x => x.time >= last.time - 86400000);
+
+  // Använd historyCache (30h) för dygnsberäkning om tillgänglig
+  const longData = state.historyCache.length > r.length ? state.historyCache : r;
+  const dayAgo = longData.find(x => x.time >= last.time - 86400000);
+
   return {
     changePerMin,
     hourChange: hourAgo ? last.hpa - hourAgo.hpa : null,
@@ -860,7 +864,11 @@ async function tick() {
   if (hpa == null) { addLog('❌ Kunde inte hämta lufttryck'); return; }
   state.readings.push({ time: Date.now(), hpa });
   // Behåll 30 timmar i minnet (för dygnsberäkning + marginal)
-  state.readings = state.readings.filter(r => r.time >= Date.now() - 108000000);
+  // state.readings = senaste 2h för 2h-grafen
+  state.readings = state.readings.filter(r => r.time >= Date.now() - 7200000);
+  // historyCache = senaste 30h för dygnsberäkning
+  state.historyCache = [...state.historyCache, { time: Date.now(), hpa }]
+    .filter(r => r.time >= Date.now() - 108000000);
   const { changePerMin, dayChange } = analyze();
   const { level } = calcMigraineRisk(hpa, dayChange);
   maybeNotify(hpa, dayChange, level);
@@ -938,8 +946,20 @@ window.addEventListener('resize', () => {
 (async () => {
   await ensureAuth();
   await updateDbStats();
-  const hist = await loadHistory(30);
-  if (hist.length > 1) { state.readings = hist; drawChart(hist.slice(-120)); }  // Rita senaste 2h i diagrammet
+
+  // Ladda 30h för att analyze() ska kunna beräkna dygnsförändring
+  const hist30 = await loadHistory(30);
+
+  // state.readings = senaste 2h (används av 2h-grafen och analyze())
+  const twoHoursAgo = Date.now() - 2 * 3600000;
+  state.readings = hist30.filter(r => r.time >= twoHoursAgo);
+
+  // Spara hela 30h-historiken separat för dygnsberäkning i analyze()
+  // Injicera äldre punkter tillfälligt när analyze() behöver dem
+  state.historyCache = hist30;
+
+  if (state.readings.length > 1) drawChart(state.readings);
+
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
   addLog('✅ Firebase Firestore ansluten');
