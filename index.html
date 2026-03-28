@@ -213,21 +213,6 @@
     </div>
   </div>
 
-  <div class="pressure-card">
-    <div class="pressure-label">Lufttryck just nu</div>
-    <div class="pressure-value" id="pressureVal">––––</div>
-    <div class="pressure-unit">hPa</div>
-    <div class="pressure-trend" id="trendBadge">⟶ Väntar på data</div>
-  </div>
-
-  <div class="stats-grid">
-    <div class="stat-card"><div class="label">Förändring/min</div><div class="value" id="changeVal">–</div></div>
-    <div class="stat-card"><div class="label">Senaste timmen</div><div class="value" id="hourChange">–</div></div>
-    <div class="stat-card"><div class="label">Δ sedan igår</div><div class="value" id="dayChange">–</div></div>
-    <div class="stat-card"><div class="label">Min (24 tim)</div><div class="value" id="minVal">–</div></div>
-    <div class="stat-card"><div class="label">Max (24 tim)</div><div class="value" id="maxVal">–</div></div>
-  </div>
-
   <!-- Migränrisk-kort -->
   <div class="migraine-card risk-low" id="migraineCard">
     <div class="migraine-header">
@@ -249,6 +234,21 @@
       </div>
     </div>
     <div class="risk-desc" id="riskDesc">Startar övervakning för att bedöma risk…</div>
+  </div>
+
+  <div class="pressure-card">
+    <div class="pressure-label">Lufttryck just nu</div>
+    <div class="pressure-value" id="pressureVal">––––</div>
+    <div class="pressure-unit">hPa</div>
+    <div class="pressure-trend" id="trendBadge">⟶ Väntar på data</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="label">Förändring/min</div><div class="value" id="changeVal">–</div></div>
+    <div class="stat-card"><div class="label">Senaste timmen</div><div class="value" id="hourChange">–</div></div>
+    <div class="stat-card"><div class="label">Δ sedan igår</div><div class="value" id="dayChange">–</div></div>
+    <div class="stat-card"><div class="label">Min (24 tim)</div><div class="value" id="minVal">–</div></div>
+    <div class="stat-card"><div class="label">Max (24 tim)</div><div class="value" id="maxVal">–</div></div>
   </div>
 
   <div class="chart-card">
@@ -552,15 +552,17 @@ function analyze() {
 function calcMigraineRisk(hpa, dayChange) {
   // Baserat på forskning: tryckfall >5 hPa/dygn = förhöjd risk
   // Nivå <1013 hPa = förhöjd grundrisk
+  const thresh = parseFloat($('threshInput').value) || 5;
+  const threshMed = thresh * 0.6;
   let score = 0;
   let factors = [];
 
-  // Faktor 1: dygnsförändring (viktigast)
+  // Faktor 1: dygnsförändring (viktigast) – skalas med användarens tröskel
   if (dayChange !== null) {
     const drop = -dayChange; // positivt värde = tryckfall
-    if (drop >= 5)       { score += 60; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (≥5 = hög risk)`); }
-    else if (drop >= 3)  { score += 30; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (3–5 = medel)`); }
-    else if (drop > 0)   { score += 10; }
+    if (drop >= thresh)         { score += 60; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (≥${thresh} = hög risk)`); }
+    else if (drop >= threshMed) { score += 30; factors.push(`Tryckfall ${drop.toFixed(1)} hPa/dygn (${threshMed.toFixed(1)}–${thresh} = medel)`); }
+    else if (drop > 0)          { score += 10; }
   }
 
   // Faktor 2: absolut trycknivå
