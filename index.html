@@ -963,6 +963,9 @@ window.addEventListener('resize', () => {
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
   addLog('✅ Firebase Firestore ansluten');
+
+  // Starta övervakning automatiskt
+  toggleMonitoring();
 })();
 </script>
 </body>
