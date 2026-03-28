@@ -664,7 +664,13 @@ function updateUI() {
   card.className = `migraine-card risk-${level}`;
   pill.className  = `risk-pill ${level}`;
   pill.textContent = level === 'high' ? '⚠ Hög risk' : level === 'med' ? '▲ Medel risk' : '✓ Låg risk';
-  fill.style.width = Math.max(3, score) + '%';
+  // Normalisera bredden så att visuell position matchar level-etiketten:
+  // low (0-24) → 0-33%, med (25-59) → 34-66%, high (60-100) → 67-100%
+  let fillPct;
+  if (level === 'low')      fillPct = Math.max(3, (score / 24) * 33);
+  else if (level === 'med') fillPct = 34 + ((score - 25) / 34) * 32;
+  else                      fillPct = 67 + ((score - 60) / 40) * 33;
+  fill.style.width = Math.min(100, fillPct).toFixed(1) + '%';
   fill.className = `risk-fill ${level === 'low' ? '' : level}`;
 
   // Dygnsförändring i migränkortet
