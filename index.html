@@ -295,7 +295,7 @@
 
   <button class="action-btn" id="startBtn">▶ Starta övervakning</button>
   <button class="action-btn secondary" id="notifBtn">🔔 Aktivera notiser</button>
-  <button class="action-btn danger" id="cleanBtn">🗑 Rensa data äldre än 30 dagar</button>
+
 
   <div class="log-card">
     <div class="log-title">Händelselogg</div>
@@ -919,7 +919,6 @@ async function enableNotifications() {
 // ─── Events ──────────────────────────────────────────────────────────────────
 $('startBtn').addEventListener('click', toggleMonitoring);
 $('notifBtn').addEventListener('click', enableNotifications);
-$('cleanBtn').addEventListener('click', cleanOldData);
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
 
 document.querySelectorAll('.chart-tab').forEach(btn => {
@@ -971,6 +970,9 @@ window.addEventListener('resize', () => {
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
   addLog('✅ Firebase Firestore ansluten');
+
+  // Rensa automatiskt data äldre än 30 dagar vid start
+  await cleanOldData();
 
   // Starta övervakning automatiskt
   toggleMonitoring();
