@@ -976,6 +976,30 @@ window.addEventListener('resize', () => {
 
   // Starta övervakning automatiskt
   toggleMonitoring();
+
+  // ─── Service Worker + Periodic Background Sync ──────────────────────────
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      addLog('⚙️ Service worker registrerad');
+
+      if ('periodicSync' in reg) {
+        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+        if (status.state === 'granted') {
+          await reg.periodicSync.register('check-pressure', {
+            minInterval: 60 * 60 * 1000 // min 1 timme; Chrome bestämmer exakt tidpunkt
+          });
+          addLog('🔄 Bakgrundssynk aktiverad (~1 gång/tim)');
+        } else {
+          addLog('⚠️ Bakgrundssynk ej tillåten – installera appen som PWA');
+        }
+      } else {
+        addLog('ℹ️ Bakgrundssynk stöds ej i denna webbläsare');
+      }
+    } catch (e) {
+      addLog('⚠️ Service worker-fel: ' + e.message);
+    }
+  }
 })();
 </script>
 </body>
