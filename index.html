@@ -977,20 +977,11 @@ window.addEventListener('resize', () => {
   // Starta övervakning automatiskt
   toggleMonitoring();
 
-  navigator.serviceWorker?.addEventListener('message', event => {
-    if (event.data?.type === 'SW_LOG') {
-      addLog(event.data.message);
-    }
-  });
-
   // ─── Service Worker + Periodic Background Sync ──────────────────────────
   if ('serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
       addLog('⚙️ Service worker registrerad');
-      if (reg.active) {
-        addLog('✅ Service worker redan aktiv');
-      }
 
       if ('periodicSync' in reg) {
         const status = await navigator.permissions.query({ name: 'periodic-background-sync' });

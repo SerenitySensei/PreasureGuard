@@ -2,13 +2,23 @@
   "name": "Lufttryck – Tryckövervakning",
   "short_name": "Lufttryck",
   "description": "Övervakar lufttrycket och skickar notiser vid snabba förändringar",
-  "start_url": "/index.html",
+  "id": "https://serenitysensei.github.io/PreasureGuard/",
+  "start_url": "https://serenitysensei.github.io/PreasureGuard/",
+  "scope": "/PreasureGuard/",
   "display": "standalone",
   "background_color": "#060c1a",
   "theme_color": "#0a0f1e",
   "orientation": "portrait",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
