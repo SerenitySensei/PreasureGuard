@@ -977,31 +977,20 @@ window.addEventListener('resize', () => {
   // Starta övervakning automatiskt
   toggleMonitoring();
 
-  // ─── Service Worker + Periodic Background Sync ──────────────────────────
+  // ─── Service Worker ────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', event => {
+      if (event.data?.type === 'SW_LOG') addLog(event.data.message);
+    });
+
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
       addLog('⚙️ Service worker registrerad');
 
-      if ('periodicSync' in reg) {
-        try {
-          const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
-
-          if (status.state === 'granted') {
-            await reg.periodicSync.register('check-pressure', {
-              minInterval: 60 * 60 * 1000 // min 1 timme; Chrome bestämmer exakt tidpunkt
-            });
-            addLog('🔄 Bakgrundssynk registrerad');
-          } else if (status.state === 'prompt') {
-            addLog('ℹ️ Bakgrundssynk stöds, men är inte aktiverad av webbläsaren ännu');
-          } else {
-            addLog('⚠️ Bakgrundssynk nekad av webbläsaren');
-          }
-        } catch (e) {
-          addLog('⚠️ Kunde inte registrera bakgrundssynk: ' + e.message);
-        }
-      } else {
-        addLog('ℹ️ Periodic Background Sync stöds ej i denna webbläsare');
+      if (reg.active) {
+        addLog('✅ Service worker redan aktiv');
+      } else if (reg.installing || reg.waiting) {
+        addLog('ℹ️ Service worker uppdateras eller väntar på aktivering');
       }
     } catch (e) {
       addLog('⚠️ Service worker-fel: ' + e.message);
