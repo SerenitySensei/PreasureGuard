@@ -984,17 +984,24 @@ window.addEventListener('resize', () => {
       addLog('⚙️ Service worker registrerad');
 
       if ('periodicSync' in reg) {
-        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
-        if (status.state === 'granted') {
-          await reg.periodicSync.register('check-pressure', {
-            minInterval: 60 * 60 * 1000 // min 1 timme; Chrome bestämmer exakt tidpunkt
-          });
-          addLog('🔄 Bakgrundssynk aktiverad (~1 gång/tim)');
-        } else {
-          addLog('⚠️ Bakgrundssynk ej tillåten – installera appen som PWA');
+        try {
+          const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+
+          if (status.state === 'granted') {
+            await reg.periodicSync.register('check-pressure', {
+              minInterval: 60 * 60 * 1000 // min 1 timme; Chrome bestämmer exakt tidpunkt
+            });
+            addLog('🔄 Bakgrundssynk registrerad');
+          } else if (status.state === 'prompt') {
+            addLog('ℹ️ Bakgrundssynk stöds, men är inte aktiverad av webbläsaren ännu');
+          } else {
+            addLog('⚠️ Bakgrundssynk nekad av webbläsaren');
+          }
+        } catch (e) {
+          addLog('⚠️ Kunde inte registrera bakgrundssynk: ' + e.message);
         }
       } else {
-        addLog('ℹ️ Bakgrundssynk stöds ej i denna webbläsare');
+        addLog('ℹ️ Periodic Background Sync stöds ej i denna webbläsare');
       }
     } catch (e) {
       addLog('⚠️ Service worker-fel: ' + e.message);
