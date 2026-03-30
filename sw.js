@@ -1,3 +1,4 @@
+// Build timestamp: 2026-03-30 17:30:18 UTC
 // sw.js – Service Worker för Lufttryck-appen
 // Hanterar Periodic Background Sync och push-notiser i bakgrunden.
 //
