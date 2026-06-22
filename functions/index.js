@@ -116,23 +116,28 @@ function changePerMinute(currentHpa, currentTime, previous) {
 }
 
 exports.getBackendLogs = onCall(async () => {
-  const snap = await db.collection(LOG_COL)
-    .orderBy("timestamp", "desc")
-    .limit(20)
-    .get();
+  try {
+    const snap = await db.collection(LOG_COL)
+      .orderBy("timestamp", "desc")
+      .limit(20)
+      .get();
 
-  return {
-    logs: snap.docs.map(doc => {
-      const data = doc.data();
-      return {
-        time: data.timestamp?.toMillis ? data.timestamp.toMillis() : Date.now(),
-        level: data.level || "info",
-        category: data.category || "",
-        message: data.message || "(utan meddelande)",
-        details: data.details || {}
-      };
-    })
-  };
+    return {
+      logs: snap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          time: data.timestamp?.toMillis ? data.timestamp.toMillis() : Date.now(),
+          level: data.level || "info",
+          category: data.category || "",
+          message: data.message || "(utan meddelande)",
+          details: data.details || {}
+        };
+      })
+    };
+  } catch (error) {
+    logger.error("[LOGS] Failed to fetch backend logs", { error: error.message });
+    return { logs: [] };
+  }
 });
 
 exports.collectPressureReading = onSchedule(
