@@ -44,6 +44,25 @@
     h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; }
     .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
+    .lang-switcher {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 100px; padding: 6px 10px; transition: all 0.3s;
+      font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+      cursor: pointer;
+    }
+    .lang-switcher:hover {
+      background: rgba(59,130,246,0.15); border-color: rgba(59,130,246,0.3);
+    }
+    .lang-switcher select {
+      background: transparent; border: none; color: #93c5fd;
+      font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+      cursor: pointer; outline: none; appearance: none; padding: 0 4px;
+    }
+    .lang-switcher select option {
+      background: var(--surface); color: var(--text);
+    }
+
     .badge {
       display: inline-flex; align-items: center; gap: 4px;
       font-family: var(--mono); font-size: 0.6rem; padding: 3px 7px;
@@ -199,6 +218,12 @@
       <div><h1>Lufttryck</h1></div>
     </div>
     <div class="header-right">
+      <div class="lang-switcher">
+        <select id="langSelect">
+          <option value="en">🇬🇧 EN</option>
+          <option value="sv">🇸🇪 SE</option>
+        </select>
+      </div>
       <span class="badge yellow" id="dbBadge">🔥 Connecting…</span>
       <span class="badge blue" id="sourceBadge">⬤ –</span>
       <div class="status-dot" id="statusDot"></div>
@@ -286,13 +311,6 @@
     <div class="setting-row">
       <div><div class="setting-label" id="lblThreshold">Migraine threshold (hPa/day)</div><div class="setting-sub" id="subThreshold">Alert on pressure drop ≥</div></div>
       <input type="number" class="setting-input" id="threshInput" value="5" step="0.5" min="1" max="20">
-    </div>
-    <div class="setting-row">
-      <div><div class="setting-label" id="lblLanguage">Language</div><div class="setting-sub" id="subLanguage">Choose interface language</div></div>
-      <select id="langSelect" class="setting-input" style="cursor: pointer;">
-        <option value="en">English</option>
-        <option value="sv">Swedish (Svenska)</option>
-      </select>
     </div>
   </div>
 
@@ -507,8 +525,6 @@ function updateAllText() {
   setTextIfExists('subNotif', t('allowNotif'));
   setTextIfExists('lblThreshold', t('migraineThreshold'));
   setTextIfExists('subThreshold', t('alertOnPressure'));
-  setTextIfExists('lblLanguage', t('language'));
-  setTextIfExists('subLanguage', t('chooseLanguage'));
   setTextIfExists('logTitle', t('eventLog'));
   setTextIfExists('logEmpty', t('noEvents'));
   setTextIfExists('installHint', t('installHint'));
