@@ -1,6 +1,6 @@
 {
-  "name": "preasureguard-functions",
-  "description": "Scheduled backend jobs for PreasureGuard",
+  "name": "preassureguard-functions",
+  "description": "Scheduled backend jobs for PreassureGuard",
   "private": true,
   "engines": {
     "node": "22"
