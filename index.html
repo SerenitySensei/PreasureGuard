@@ -473,40 +473,45 @@ const state = {
   backendLogs: [], localLogs: []
 };
 
+function setTextIfExists(id, text) {
+  const el = $(id);
+  if (el) el.textContent = text;
+}
+
 function updateAllText() {
-  $('pageTitle').textContent = t('pageTitle');
-  $('alertTitle').textContent = t('rapidChange');
-  $('alertMsg').textContent = t('rapidChangeMsg');
-  $('migraineTitle').textContent = t('migraineRisk');
-  $('riskLabelLow').textContent = t('riskLabelLow');
-  $('riskLabelMed').textContent = t('riskLabelMed');
-  $('riskLabelHigh').textContent = t('riskLabelHigh');
-  $('rfDayLabel').textContent = t('deltaDay');
-  $('rfLevelLabel').textContent = t('pressureLevel');
-  $('pressureLabelNow').textContent = t('currentPressure');
-  $('labelChangeMin').textContent = t('changeMin');
-  $('labelLastHour').textContent = t('lastHour');
-  $('labelDayChange').textContent = t('deltaSinceYesterday');
-  $('labelMin24').textContent = t('min24h');
-  $('labelMax24').textContent = t('max24h');
-  $('chartTitle').textContent = t('history');
-  $('tab2h').textContent = '2h';
-  $('tab24h').textContent = '24h';
-  $('tab7d').textContent = t('eventLog') === 'Event Log' ? '7 days' : '7 dagar';
-  $('tab30d').textContent = t('eventLog') === 'Event Log' ? '30 days' : '30 dagar';
-  $('lblReadings').textContent = t('readings');
-  $('lblOldest').textContent = t('oldest');
-  $('lblLastSave').textContent = t('lastSaved');
-  $('settingsTitle').textContent = t('settings');
-  $('lblNotif').textContent = t('notifications');
-  $('subNotif').textContent = t('allowNotif');
-  $('lblThreshold').textContent = t('migraineThreshold');
-  $('subThreshold').textContent = t('alertOnPressure');
-  $('lblLanguage').textContent = t('language');
-  $('subLanguage').textContent = t('chooseLanguage');
-  $('logTitle').textContent = t('eventLog');
-  $('logEmpty').textContent = t('noEvents');
-  $('installHint').textContent = t('installHint');
+  setTextIfExists('pageTitle', t('pageTitle'));
+  setTextIfExists('alertTitle', t('rapidChange'));
+  setTextIfExists('alertMsg', t('rapidChangeMsg'));
+  setTextIfExists('migraineTitle', t('migraineRisk'));
+  setTextIfExists('riskLabelLow', t('riskLabelLow'));
+  setTextIfExists('riskLabelMed', t('riskLabelMed'));
+  setTextIfExists('riskLabelHigh', t('riskLabelHigh'));
+  setTextIfExists('rfDayLabel', t('deltaDay'));
+  setTextIfExists('rfLevelLabel', t('pressureLevel'));
+  setTextIfExists('pressureLabelNow', t('currentPressure'));
+  setTextIfExists('labelChangeMin', t('changeMin'));
+  setTextIfExists('labelLastHour', t('lastHour'));
+  setTextIfExists('labelDayChange', t('deltaSinceYesterday'));
+  setTextIfExists('labelMin24', t('min24h'));
+  setTextIfExists('labelMax24', t('max24h'));
+  setTextIfExists('chartTitle', t('history'));
+  setTextIfExists('tab2h', '2h');
+  setTextIfExists('tab24h', '24h');
+  setTextIfExists('tab7d', currentLang === 'en' ? '7 days' : '7 dagar');
+  setTextIfExists('tab30d', currentLang === 'en' ? '30 days' : '30 dagar');
+  setTextIfExists('lblReadings', t('readings'));
+  setTextIfExists('lblOldest', t('oldest'));
+  setTextIfExists('lblLastSave', t('lastSaved'));
+  setTextIfExists('settingsTitle', t('settings'));
+  setTextIfExists('lblNotif', t('notifications'));
+  setTextIfExists('subNotif', t('allowNotif'));
+  setTextIfExists('lblThreshold', t('migraineThreshold'));
+  setTextIfExists('subThreshold', t('alertOnPressure'));
+  setTextIfExists('lblLanguage', t('language'));
+  setTextIfExists('subLanguage', t('chooseLanguage'));
+  setTextIfExists('logTitle', t('eventLog'));
+  setTextIfExists('logEmpty', t('noEvents'));
+  setTextIfExists('installHint', t('installHint'));
 }
 
 const cfg = () => ({
