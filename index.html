@@ -61,22 +61,6 @@
     }
     .lang-code { letter-spacing: 0.06em; }
     .lang-caret { opacity: 0.8; }
-    .lang-menu {
-      position: absolute; right: 0; top: calc(100% + 8px);
-      min-width: 112px; padding: 6px; z-index: 999;
-      background: #0b1425; border: 1px solid var(--border); border-radius: 12px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-      display: none;
-    }
-    .lang-menu.open { display: block; }
-    .lang-option {
-      width: 100%; display: flex; align-items: center; gap: 8px;
-      background: transparent; border: none; border-radius: 8px;
-      color: var(--text); padding: 7px 8px; cursor: pointer;
-      font-family: var(--mono); font-size: 0.72rem; font-weight: 700;
-      text-align: left;
-    }
-    .lang-option:hover { background: rgba(255,255,255,0.06); }
 
     .badge {
       display: inline-flex; align-items: center; gap: 4px;
@@ -234,17 +218,11 @@
     </div>
     <div class="header-right">
       <div class="lang-dropdown" id="langDropdown">
-        <button class="lang-toggle" id="langToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Select language">
+        <button class="lang-toggle" id="langToggle" type="button" aria-label="Switch language">
           <img class="lang-flag" id="langFlag" src="./Flag_of_Great_Britain_30.png" alt="Language flag">
           <span class="lang-code" id="langCode">EN</span>
-          <span class="lang-caret">▾</span>
+          <span class="lang-caret">↺</span>
         </button>
-        <div class="lang-menu" id="langMenu">
-          <button class="lang-option" id="langOption" type="button" data-lang="sv">
-            <img class="lang-flag" id="langOptionFlag" src="./Flag_of_Sweden_30.png" alt="Swedish flag">
-            <span id="langOptionCode">SE</span>
-          </button>
-        </div>
       </div>
       <span class="badge yellow" id="dbBadge">🔥 Connecting…</span>
       <span class="badge blue" id="sourceBadge">⬤ –</span>
@@ -523,24 +501,11 @@ function updateLanguageBadge() {
   const nextLang = currentLang === 'sv' ? 'en' : 'sv';
   const code = $('langCode');
   const flag = $('langFlag');
-  const option = $('langOption');
-  const optionCode = $('langOptionCode');
-  const optionFlag = $('langOptionFlag');
 
   if (code) code.textContent = nextLang === 'sv' ? 'SE' : 'EN';
   if (flag) {
     flag.src = nextLang === 'sv' ? './Flag_of_Sweden_30.png' : './Flag_of_Great_Britain_30.png';
     flag.alt = nextLang === 'sv' ? 'Swedish flag' : 'British flag';
-  }
-  if (option) {
-    option.dataset.lang = nextLang;
-  }
-  if (optionCode) {
-    optionCode.textContent = nextLang === 'sv' ? 'SE' : 'EN';
-  }
-  if (optionFlag) {
-    optionFlag.src = nextLang === 'sv' ? './Flag_of_Sweden_30.png' : './Flag_of_Great_Britain_30.png';
-    optionFlag.alt = nextLang === 'sv' ? 'Swedish flag' : 'British flag';
   }
 }
 
@@ -1176,22 +1141,8 @@ async function enableNotifications() {
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
 
 $('langToggle').addEventListener('click', () => {
-  const menu = $('langMenu');
-  const expanded = menu.classList.toggle('open');
-  $('langToggle').setAttribute('aria-expanded', expanded ? 'true' : 'false');
-});
-
-$('langOption').addEventListener('click', () => {
-  setLanguage($('langOption').dataset.lang);
-  $('langMenu').classList.remove('open');
-  $('langToggle').setAttribute('aria-expanded', 'false');
-});
-
-document.addEventListener('click', e => {
-  const root = $('langDropdown');
-  if (!root || root.contains(e.target)) return;
-  $('langMenu').classList.remove('open');
-  $('langToggle').setAttribute('aria-expanded', 'false');
+  const nextLang = currentLang === 'sv' ? 'en' : 'sv';
+  setLanguage(nextLang);
 });
 
 document.querySelectorAll('.chart-tab').forEach(btn => {
