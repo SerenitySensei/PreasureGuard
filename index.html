@@ -293,7 +293,6 @@
     </div>
   </div>
 
-  <button class="action-btn" id="startBtn">▶ Starta övervakning</button>
   <button class="action-btn secondary" id="notifBtn">🔔 Aktivera notiser</button>
 
 
@@ -848,22 +847,14 @@ async function tick() {
   updateUI();
 }
 
-// ─── Start/stop ──────────────────────────────────────────────────────────────
-async function toggleMonitoring() {
-  if (state.running) {
-    state.running = false; clearInterval(state.timerId);
-    if (barometer) { try { barometer.stop(); } catch {} }
-    $('startBtn').textContent = '▶ Starta övervakning';
-    $('statusDot').className = 'status-dot';
-    addLog('⏹ Övervakning stoppad'); return;
-  }
-  $('startBtn').textContent = '⏳ Startar…'; $('startBtn').disabled = true;
+// ─── Start monitoring ────────────────────────────────────────────────────────
+async function startMonitoring() {
+  if (state.running) return;
   await ensureAuth();
   const hasSensor = await checkSensor();
   if (hasSensor) { startBarometer(); addLog('📡 Barometersensor hittad'); }
   else { addLog('🌐 Ingen sensor – använder Open-Meteo API'); }
   state.running = true;
-  $('startBtn').textContent = '⏹ Stoppa övervakning'; $('startBtn').disabled = false;
   $('statusDot').className = 'status-dot active';
   await tick();
   state.timerId = setInterval(tick, cfg().interval);
@@ -881,7 +872,6 @@ async function enableNotifications() {
 }
 
 // ─── Events ──────────────────────────────────────────────────────────────────
-$('startBtn').addEventListener('click', toggleMonitoring);
 $('notifBtn').addEventListener('click', enableNotifications);
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
 
@@ -936,7 +926,7 @@ window.addEventListener('resize', () => {
   addLog('✅ Firebase Firestore ansluten');
 
   // Starta övervakning automatiskt
-  toggleMonitoring();
+  startMonitoring();
 
   // ─── Service Worker ────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
