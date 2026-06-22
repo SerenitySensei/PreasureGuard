@@ -300,7 +300,7 @@
 
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getFirestore, collection, query, where, orderBy, getDocs, Timestamp }
+import { getFirestore, collection, query, where, orderBy, limit, getDocs, Timestamp }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, signInAnonymously }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
@@ -318,6 +318,7 @@ const fbApp = initializeApp(firebaseConfig);
 const db    = getFirestore(fbApp);
 const auth  = getAuth(fbApp);
 const COL   = "pressure_readings";
+const LOG_COL = "backend_events";
 const THIRTY_DAYS_MS = 30 * 24 * 3600 * 1000;
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -325,7 +326,8 @@ const state = {
   readings: [], running: false, timerId: null,
   notifEnabled: false, source: 'none',
   lastNotifTime: 0, sensorAvailable: false,
-  uid: null, lastSave: null, chartHours: 2, cachedChartData: null, historyCache: []
+  uid: null, lastSave: null, chartHours: 2, cachedChartData: null, historyCache: [],
+  backendLogs: [], localLogs: []
 };
 
 const cfg = () => ({
@@ -824,15 +826,64 @@ function drawChart(readings) {
 }
 
 // ─── Log ─────────────────────────────────────────────────────────────────────
+function formatLogTime(ms) {
+  return new Date(ms).toLocaleTimeString('sv-SE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+function renderLogs() {
+  const merged = [...state.backendLogs, ...state.localLogs]
+    .sort((a, b) => b.time - a.time)
+    .slice(0, 20);
+
+  $('logList').innerHTML = '';
+  $('logEmpty').style.display = merged.length ? 'none' : 'block';
+
+  for (const entry of merged) {
+    const item = document.createElement('div');
+    item.className = 'log-item';
+
+    const time = document.createElement('span');
+    time.className = 'log-time';
+    time.textContent = formatLogTime(entry.time);
+
+    const message = document.createElement('span');
+    message.textContent = entry.source === 'backend' && entry.category
+      ? `[${entry.category}] ${entry.message}`
+      : entry.message;
+
+    item.appendChild(time);
+    item.appendChild(message);
+    $('logList').appendChild(item);
+  }
+}
+
 function addLog(msg) {
-  $('logEmpty').style.display = 'none';
-  const item = document.createElement('div');
-  item.className = 'log-item';
-  const t = new Date().toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  item.innerHTML = `<span class="log-time">${t}</span><span>${msg}</span>`;
-  $('logList').prepend(item);
-  const items = $('logList').querySelectorAll('.log-item');
-  if (items.length > 20) items[items.length - 1].remove();
+  state.localLogs = [{ time: Date.now(), message: msg, source: 'ui' }, ...state.localLogs].slice(0, 20);
+  renderLogs();
+}
+
+async function loadBackendLogs() {
+  try {
+    const q = query(collection(db, LOG_COL), orderBy('timestamp', 'desc'), limit(20));
+    const snap = await getDocs(q);
+    state.backendLogs = snap.docs.map(doc => {
+      const data = doc.data();
+      const timeValue = data.timestamp?.toMillis ? data.timestamp.toMillis() : Date.now();
+      return {
+        time: timeValue,
+        source: 'backend',
+        category: data.category || '',
+        message: data.message || '(utan meddelande)'
+      };
+    });
+    renderLogs();
+  } catch (e) {
+    addLog('⚠️ Kunde inte läsa backend-loggar: ' + e.message);
+  }
 }
 
 // ─── Tick ────────────────────────────────────────────────────────────────────
@@ -925,6 +976,9 @@ window.addEventListener('resize', () => {
   
   // Populate UI with loaded data
   updateUI();
+
+  await loadBackendLogs();
+  setInterval(() => loadBackendLogs(), 60000);
 
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';

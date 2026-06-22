@@ -5,10 +5,13 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 const db = admin.firestore();
-const COL = "pressure_readings";
+const PRESSURE_COL = "pressure_readings";
+const LOG_COL = "backend_events";
 const DEFAULT_LAT = 59.5344;
 const DEFAULT_LON = 18.0762;
 const SAMPLE_INTERVAL_MINUTES = 5;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const DELETE_BATCH_SIZE = 400;
 
 function configuredCoordinate(name, fallback) {
   const raw = process.env[name];
@@ -29,6 +32,31 @@ function bucketStart(date, intervalMinutes) {
 
 function docIdForBucket(date) {
   return `backend_${date.toISOString().replace(/[:.]/g, "-")}`;
+}
+
+async function recordBackendEvent(level, category, message, details = {}) {
+  const payload = {
+    timestamp: admin.firestore.Timestamp.fromDate(new Date()),
+    level,
+    category,
+    message,
+    details,
+    source: "backend"
+  };
+
+  try {
+    await db.collection(LOG_COL).add(payload);
+  } catch (error) {
+    logger.error("[LOG] Failed to write backend event", {
+      level,
+      category,
+      message,
+      error: error.message
+    });
+  }
+
+  const logMethod = logger[level] || logger.info;
+  logMethod(message, { category, ...details });
 }
 
 async function fetchPressureHpa(lat, lon) {
@@ -60,7 +88,7 @@ async function fetchPressureHpa(lat, lon) {
 }
 
 async function latestReadingBefore(timestamp) {
-  const snap = await db.collection(COL)
+  const snap = await db.collection(PRESSURE_COL)
     .where("timestamp", "<", admin.firestore.Timestamp.fromDate(timestamp))
     .orderBy("timestamp", "desc")
     .limit(1)
@@ -95,14 +123,12 @@ exports.collectPressureReading = onSchedule(
     memory: "256MiB"
   },
   async () => {
-    logger.info("[COLLECT] Starting pressure collection cycle", {
-      timestamp: new Date().toISOString()
-    });
-    const docRef = db.collection(COL).doc(docIdForBucket(sampledAt));
+    const sampledAt = bucketStart(new Date(), SAMPLE_INTERVAL_MINUTES);
+    const docRef = db.collection(PRESSURE_COL).doc(docIdForBucket(sampledAt));
     const existing = await docRef.get();
 
     if (existing.exists) {
-      logger.info("[COLLECT] Reading already exists for this bucket", {
+      await recordBackendEvent("info", "collect", "Reading already exists for this bucket", {
         bucketTime: sampledAt.toISOString()
       });
       return;
@@ -110,17 +136,14 @@ exports.collectPressureReading = onSchedule(
 
     const lat = configuredCoordinate("PRESSURE_LAT", DEFAULT_LAT);
     const lon = configuredCoordinate("PRESSURE_LON", DEFAULT_LON);
-    logger.info("[COLLECT] Fetching pressure data from Open-Meteo", { lat, lon });
+    await recordBackendEvent("info", "collect", "Collection cycle started", {
+      sampledAt: sampledAt.toISOString(),
+      location: `${lat.toFixed(4)}, ${lon.toFixed(4)}`
+    });
+
     const hpa = await fetchPressureHpa(lat, lon);
-    logger.info("[COLLECT] Received pressure reading", { hpa });
-    
     const previous = await latestReadingBefore(sampledAt);
     const deltaPerMinute = changePerMinute(hpa, sampledAt, previous);
-    logger.info("[COLLECT] Calculated pressure change", {
-      deltaPerMinute: deltaPerMinute?.toFixed(6),
-      previousHpa: previous?.hpa,
-      previousTime: previous?.time.toISOString()
-    });
 
     await docRef.create({
       timestamp: admin.firestore.Timestamp.fromDate(sampledAt),
@@ -133,17 +156,15 @@ exports.collectPressureReading = onSchedule(
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    logger.info("[COLLECT] ✅ Pressure reading saved to Firestore", {
+    await recordBackendEvent("info", "collect", "Pressure reading saved to Firestore", {
       timestamp: sampledAt.toISOString(),
-      hpa,
-      deltaPerMinute: deltaPerMinute?.toFixed(6),
+      hpa: Number(hpa.toFixed(4)),
+      deltaPerMinute: deltaPerMinute == null ? null : Number(deltaPerMinute.toFixed(6)),
+      previousHpa: previous?.hpa ?? null,
       location: `${lat.toFixed(4)}, ${lon.toFixed(4)}`
     });
   }
 );
-
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const DELETE_BATCH_SIZE = 400;
 
 exports.purgeOldReadings = onSchedule(
   {
@@ -159,20 +180,17 @@ exports.purgeOldReadings = onSchedule(
     let totalDeleted = 0;
     let batchCount = 0;
 
-    logger.info("[PURGE] Starting deletion of readings older than 30 days", {
-      cutoffDate: cutoff.toISOString(),
-      executedAt: new Date().toISOString()
+    await recordBackendEvent("info", "purge", "Purge started", {
+      cutoffDate: cutoff.toISOString()
     });
 
     while (true) {
-      const snap = await db.collection(COL)
+      const snap = await db.collection(PRESSURE_COL)
         .where("timestamp", "<", cutoffTs)
         .limit(DELETE_BATCH_SIZE)
         .get();
 
-      if (snap.empty) break;
       if (snap.empty) {
-        logger.info("[PURGE] No more old readings found");
         break;
       }
 
@@ -182,20 +200,20 @@ exports.purgeOldReadings = onSchedule(
       totalDeleted += snap.size;
       batchCount++;
 
-      logger.info("[PURGE] Deleted batch", {
+      await recordBackendEvent("info", "purge", "Deleted batch of old readings", {
         batchNum: batchCount,
         docsInBatch: snap.size,
-        totalDeletedSoFar: totalDeleted
+        totalDeletedSoFar: totalDeleted,
+        cutoffDate: cutoff.toISOString()
       });
 
       if (snap.size < DELETE_BATCH_SIZE) break;
     }
 
-    logger.info("[PURGE] ✅ Purge completed", {
+    await recordBackendEvent("info", "purge", "Purge completed", {
       cutoffDate: cutoff.toISOString(),
       totalBatches: batchCount,
-      totalDeleted,
-      completedAt: new Date().toISOString()
+      totalDeleted
     });
   }
 );
