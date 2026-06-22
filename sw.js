@@ -1,9 +1,8 @@
-// Build timestamp: 2026-06-22 18:40:00 UTC
-// sw.js – förenklad Service Worker för Lufttryck-appen
-// Fokus: cache/offline-stöd och öppna appen från notis.
-// Ingen Periodic Background Sync.
+// Build timestamp: 2026-06-22 20:15:00 UTC
+// sw.js – Service Worker for the Pressure app
+// Focus: cache/offline support and notification handling.
 
-const CACHE_NAME = 'lufttryck-app-v4';
+const CACHE_NAME = 'lufttryck-app-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -30,7 +29,7 @@ self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(APP_SHELL);
-    await broadcastLog('⚙️ Service worker installeras');
+    await broadcastLog('⚙️ Service worker installing');
     await self.skipWaiting();
   })());
 });
@@ -44,7 +43,7 @@ self.addEventListener('activate', event => {
         .map(key => caches.delete(key))
     );
     await self.clients.claim();
-    await broadcastLog('✅ Service worker startad och aktiv');
+    await broadcastLog('✅ Service worker active');
   })());
 });
 

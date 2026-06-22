@@ -408,7 +408,8 @@ const translations = {
     researchHighRisk: 'Research shows that pressure drops ≥5 hPa/day significantly increase migraine attacks.',
     elevatedRiskDesc: 'Elevated migraine risk based on pressure level and change.',
     someElevatedRisk: 'Some elevated risk – keep monitoring.',
-    stableRisk: 'Pressure is stable and within normal range. Low migraine risk right now.'
+    stableRisk: 'Pressure is stable and within normal range. Low migraine risk right now.',
+    connected: '🔥 Connected'
   },
   sv: {
     pageTitle: 'Lufttryck',
@@ -469,7 +470,8 @@ const translations = {
     researchHighRisk: 'Forskning visar att tryckfall ≥5 hPa/dygn ökar migränanfall signifikant.',
     elevatedRiskDesc: 'Förhöjd migränrisk baserat på trycknivå och förändring.',
     someElevatedRisk: 'Viss förhöjd risk – håll koll på trycket.',
-    stableRisk: 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.'
+    stableRisk: 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.',
+    connected: '🔥 Ansluten'
   }
 };
 
@@ -482,6 +484,9 @@ function setLanguage(lang) {
   document.documentElement.lang = lang;
   updateLanguageBadge();
   updateAllText();
+  if (typeof updateUI === 'function') updateUI();
+  const badge = $('dbBadge');
+  if (badge && badge.className.includes('green')) badge.textContent = t('connected');
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -1201,7 +1206,7 @@ window.addEventListener('resize', () => {
   await loadBackendLogs();
   setInterval(() => loadBackendLogs(), 60000);
 
-  $('dbBadge').textContent = '🔥 ' + t('pageTitle');
+  $('dbBadge').textContent = t('connected');
   $('dbBadge').className = 'badge green';
   addLog(t('firebaseConnected'));
 
