@@ -293,9 +293,6 @@
     </div>
   </div>
 
-  <button class="action-btn secondary" id="notifBtn">🔔 Aktivera notiser</button>
-
-
   <div class="log-card">
     <div class="log-title">Händelselogg</div>
     <div class="log-empty" id="logEmpty">Inga händelser än</div>
@@ -878,13 +875,11 @@ async function enableNotifications() {
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     state.notifEnabled = true; $('notifToggle').checked = true;
-    $('notifBtn').textContent = '✅ Notiser aktiverade'; $('notifBtn').disabled = true;
     addLog('🔔 Push-notiser aktiverade');
   } else { addLog('⛔ Notiser nekades'); }
 }
 
 // ─── Events ──────────────────────────────────────────────────────────────────
-$('notifBtn').addEventListener('click', enableNotifications);
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
 
 document.querySelectorAll('.chart-tab').forEach(btn => {
@@ -905,7 +900,6 @@ document.querySelectorAll('.chart-tab').forEach(btn => {
 
 if (Notification.permission === 'granted') {
   state.notifEnabled = true; $('notifToggle').checked = true;
-  $('notifBtn').textContent = '✅ Notiser aktiverade'; $('notifBtn').disabled = true;
 }
 window.addEventListener('resize', () => {
   if (state.chartHours === 2 || !state.cachedChartData) {
