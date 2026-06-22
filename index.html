@@ -495,7 +495,7 @@ const state = {
   notifEnabled: false, source: 'none',
   lastNotifTime: 0, sensorAvailable: false,
   uid: null, lastSave: null, chartHours: 2, cachedChartData: null, historyCache: [],
-  backendLogs: [], localLogs: []
+  backendLogs: [], localLogs: [], riskLevel: 'low'
 };
 
 function setTextIfExists(id, text) {
@@ -547,7 +547,11 @@ function updateAllText() {
   setTextIfExists('logTitle', t('eventLog'));
   setTextIfExists('logEmpty', t('noEvents'));
   setTextIfExists('installHint', t('installHint'));
-}
+  const pill = $('riskPill');
+  if (pill) {
+    const lvl = state?.riskLevel || 'low';
+    pill.textContent = lvl === 'high' ? '⚠ ' + t('highRisk') : lvl === 'med' ? '▲ ' + t('medRisk') : '✓ ' + t('lowRisk');
+  }
 
 const cfg = () => ({
   threshold: parseFloat($('threshInput').value) || 0.3,
@@ -853,6 +857,7 @@ function updateUI() {
 
   card.className = `migraine-card risk-${level}`;
   pill.className  = `risk-pill ${level}`;
+  state.riskLevel = level;
   pill.textContent = level === 'high' ? '⚠ ' + t('highRisk') : level === 'med' ? '▲ ' + t('medRisk') : '✓ ' + t('lowRisk');
   // Normalisera bredden så att visuell position matchar level-etiketten:
   // low (0-24) → 0-33%, med (25-59) → 34-66%, high (60-100) → 67-100%
