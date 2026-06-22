@@ -308,7 +308,7 @@
 
 <script type="module">
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc, Timestamp }
+import { getFirestore, collection, query, where, orderBy, getDocs, Timestamp }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, signInAnonymously }
   from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
@@ -349,29 +349,6 @@ async function ensureAuth() {
     const c = await signInAnonymously(auth);
     state.uid = c.user.uid;
   } catch (e) { addLog('⚠️ Auth-fel: ' + e.message); }
-}
-
-// ─── Firestore: spara ────────────────────────────────────────────────────────
-async function saveReading(hpa, changePerMin) {
-  try {
-    await addDoc(collection(db, COL), {
-      timestamp:    Timestamp.now(),
-      hpa:          parseFloat(hpa.toFixed(4)),
-      source:       state.source,
-      changePerMin: changePerMin != null ? parseFloat(changePerMin.toFixed(6)) : null,
-      uid:          state.uid || 'anon'
-    });
-    state.lastSave = new Date();
-    $('dbBadge').textContent = '🔥 Synkad';
-    $('dbBadge').className = 'badge green';
-    $('syncBadge').style.display = 'inline-flex';
-    $('dbLastSave').textContent = state.lastSave.toLocaleTimeString('sv-SE', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    updateDbStats();
-  } catch (e) {
-    $('dbBadge').textContent = '🔥 Fel';
-    $('dbBadge').className = 'badge red';
-    addLog('❌ Firestore-fel: ' + e.message);
-  }
 }
 
 // ─── Firestore: hämta historik ───────────────────────────────────────────────
@@ -420,18 +397,6 @@ async function updateDbStats() {
       $('maxVal').textContent = Math.max(...vals).toFixed(1);
     }
   } catch (e) { console.warn('DB stats:', e); }
-}
-
-// ─── Firestore: rensa ────────────────────────────────────────────────────────
-async function cleanOldData() {
-  const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
-  try {
-    const q = query(collection(db, COL), where("timestamp", "<", Timestamp.fromDate(cutoff)));
-    const snap = await getDocs(q);
-    for (const d of snap.docs) await deleteDoc(doc(db, COL, d.id));
-    addLog(`🗑 Rensade ${snap.size} mätningar äldre än 30 dagar`);
-    updateDbStats();
-  } catch (e) { addLog('❌ Rensning misslyckades: ' + e.message); }
 }
 
 // ─── Sensor ──────────────────────────────────────────────────────────────────
@@ -880,7 +845,6 @@ async function tick() {
   const { changePerMin, dayChange } = analyze();
   const { level } = calcMigraineRisk(hpa, dayChange);
   maybeNotify(hpa, dayChange, level);
-  await saveReading(hpa, changePerMin);
   updateUI();
 }
 
@@ -970,9 +934,6 @@ window.addEventListener('resize', () => {
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
   addLog('✅ Firebase Firestore ansluten');
-
-  // Rensa automatiskt data äldre än 30 dagar vid start
-  await cleanOldData();
 
   // Starta övervakning automatiskt
   toggleMonitoring();

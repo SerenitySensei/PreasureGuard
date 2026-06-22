@@ -130,3 +130,42 @@ exports.collectPressureReading = onSchedule(
     });
   }
 );
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const DELETE_BATCH_SIZE = 400;
+
+exports.purgeOldReadings = onSchedule(
+  {
+    schedule: "every 24 hours",
+    timeZone: "Europe/Stockholm",
+    region: "europe-west1",
+    timeoutSeconds: 540,
+    memory: "256MiB"
+  },
+  async () => {
+    const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
+    const cutoffTs = admin.firestore.Timestamp.fromDate(cutoff);
+    let totalDeleted = 0;
+
+    while (true) {
+      const snap = await db.collection(COL)
+        .where("timestamp", "<", cutoffTs)
+        .limit(DELETE_BATCH_SIZE)
+        .get();
+
+      if (snap.empty) break;
+
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      totalDeleted += snap.size;
+
+      if (snap.size < DELETE_BATCH_SIZE) break;
+    }
+
+    logger.info("Purged old pressure readings", {
+      cutoff: cutoff.toISOString(),
+      totalDeleted
+    });
+  }
+);
