@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#0a0f1e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Lufttryck">
+  <meta name="apple-mobile-web-app-title" content="Pressure">
   <link rel="manifest" href="manifest.json">
-  <title>Lufttryck</title>
+  <title>Pressure</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -199,7 +199,7 @@
       <div><h1>Lufttryck</h1></div>
     </div>
     <div class="header-right">
-      <span class="badge yellow" id="dbBadge">🔥 Ansluter…</span>
+      <span class="badge yellow" id="dbBadge">🔥 Connecting…</span>
       <span class="badge blue" id="sourceBadge">⬤ –</span>
       <div class="status-dot" id="statusDot"></div>
     </div>
@@ -208,59 +208,59 @@
   <div class="alert-banner" id="alertBanner">
     <div class="alert-icon">⚠️</div>
     <div class="alert-text">
-      <strong id="alertTitle">Snabb tryckökning</strong>
-      <span id="alertMsg">Lufttrycket förändras ovanligt snabbt.</span>
+      <strong id="alertTitle">Rapid Pressure Change</strong>
+      <span id="alertMsg">Pressure is changing unusually fast.</span>
     </div>
   </div>
 
-  <!-- Migränrisk-kort -->
+  <!-- Migraine risk card -->
   <div class="migraine-card risk-low" id="migraineCard">
     <div class="migraine-header">
-      <span class="migraine-title">🧠 Migränrisk</span>
-      <span class="risk-pill low" id="riskPill">Låg risk</span>
+      <span class="migraine-title">🧠 <span id="migraineTitle">Migraine Risk</span></span>
+      <span class="risk-pill low" id="riskPill">Low risk</span>
     </div>
     <div class="risk-meter">
       <div class="risk-track"><div class="risk-fill" id="riskFill" style="width:5%"></div></div>
-      <div class="risk-labels"><span class="risk-label">0</span><span class="risk-label">Låg</span><span class="risk-label">Medel</span><span class="risk-label">Hög</span></div>
+      <div class="risk-labels"><span class="risk-label">0</span><span class="risk-label" id="riskLabelLow">Low</span><span class="risk-label" id="riskLabelMed">Med</span><span class="risk-label" id="riskLabelHigh">High</span></div>
     </div>
     <div class="risk-factors">
       <div class="risk-factor">
-        <div class="rf-label">Δ dygn (hPa)</div>
+        <div class="rf-label" id="rfDayLabel">Δ day (hPa)</div>
         <div class="rf-val ok" id="rfDayChange">–</div>
       </div>
       <div class="risk-factor">
-        <div class="rf-label">Trycknivå (hPa)</div>
+        <div class="rf-label" id="rfLevelLabel">Pressure level (hPa)</div>
         <div class="rf-val ok" id="rfLevel">–</div>
       </div>
     </div>
-    <div class="risk-desc" id="riskDesc">Startar övervakning för att bedöma risk…</div>
+    <div class="risk-desc" id="riskDesc">Starting monitoring to assess risk…</div>
   </div>
 
   <div class="pressure-card">
-    <div class="pressure-label">Lufttryck just nu</div>
+    <div class="pressure-label" id="pressureLabelNow">Current Pressure</div>
     <div class="pressure-value" id="pressureVal">––––</div>
     <div class="pressure-unit">hPa</div>
-    <div class="pressure-trend" id="trendBadge">⟶ Väntar på data</div>
+    <div class="pressure-trend" id="trendBadge">⟶ Waiting for data</div>
   </div>
 
   <div class="stats-grid">
-    <div class="stat-card"><div class="label">Förändring/min</div><div class="value" id="changeVal">–</div></div>
-    <div class="stat-card"><div class="label">Senaste timmen</div><div class="value" id="hourChange">–</div></div>
-    <div class="stat-card"><div class="label">Δ sedan igår</div><div class="value" id="dayChange">–</div></div>
-    <div class="stat-card"><div class="label">Min (24 tim)</div><div class="value" id="minVal">–</div></div>
-    <div class="stat-card"><div class="label">Max (24 tim)</div><div class="value" id="maxVal">–</div></div>
+    <div class="stat-card"><div class="label" id="labelChangeMin">Change/min</div><div class="value" id="changeVal">–</div></div>
+    <div class="stat-card"><div class="label" id="labelLastHour">Last hour</div><div class="value" id="hourChange">–</div></div>
+    <div class="stat-card"><div class="label" id="labelDayChange">Δ since yesterday</div><div class="value" id="dayChange">–</div></div>
+    <div class="stat-card"><div class="label" id="labelMin24">Min (24h)</div><div class="value" id="minVal">–</div></div>
+    <div class="stat-card"><div class="label" id="labelMax24">Max (24h)</div><div class="value" id="maxVal">–</div></div>
   </div>
 
   <div class="chart-card">
     <div class="chart-header">
-      <span class="chart-title">Historik</span>
+      <span class="chart-title" id="chartTitle">History</span>
       <span class="chart-range" id="chartRange">–</span>
     </div>
     <div class="chart-tabs">
-      <button class="chart-tab active" data-hours="2">2 tim</button>
-      <button class="chart-tab" data-hours="24">24 tim</button>
-      <button class="chart-tab" data-hours="168">7 dagar</button>
-      <button class="chart-tab" data-hours="720">30 dagar</button>
+      <button class="chart-tab active" data-hours="2" id="tab2h">2h</button>
+      <button class="chart-tab" data-hours="24" id="tab24h">24h</button>
+      <button class="chart-tab" data-hours="168" id="tab7d">7 days</button>
+      <button class="chart-tab" data-hours="720" id="tab30d">30 days</button>
     </div>
     <canvas id="chart"></canvas>
   </div>
@@ -268,34 +268,41 @@
   <div class="db-card">
     <div class="db-card-title">
       <span>🔥 Firebase Firestore</span>
-      <span class="badge green" id="syncBadge" style="display:none">✓ Synkad</span>
+      <span class="badge green" id="syncBadge" style="display:none">✓ Synced</span>
     </div>
     <div class="db-stats">
-      <div class="db-stat"><div class="val" id="dbCount">–</div><div class="lbl">Mätningar</div></div>
-      <div class="db-stat"><div class="val" id="dbOldest">–</div><div class="lbl">Äldsta</div></div>
-      <div class="db-stat"><div class="val" id="dbLastSave">–</div><div class="lbl">Senast sparad</div></div>
+      <div class="db-stat"><div class="val" id="dbCount">–</div><div class="lbl" id="lblReadings">Readings</div></div>
+      <div class="db-stat"><div class="val" id="dbOldest">–</div><div class="lbl" id="lblOldest">Oldest</div></div>
+      <div class="db-stat"><div class="val" id="dbLastSave">–</div><div class="lbl" id="lblLastSave">Last saved</div></div>
     </div>
   </div>
 
   <div class="settings-card">
-    <div class="settings-title">Inställningar</div>
+    <div class="settings-title" id="settingsTitle">Settings</div>
     <div class="setting-row">
-      <div><div class="setting-label">Notiser</div><div class="setting-sub">Tillåt push-notiser</div></div>
+      <div><div class="setting-label" id="lblNotif">Notifications</div><div class="setting-sub" id="subNotif">Allow push notifications</div></div>
       <label class="toggle"><input type="checkbox" id="notifToggle"><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
     </div>
     <div class="setting-row">
-      <div><div class="setting-label">Migrän-tröskel (hPa/dygn)</div><div class="setting-sub">Notis vid tryckfall per dygn ≥</div></div>
+      <div><div class="setting-label" id="lblThreshold">Migraine threshold (hPa/day)</div><div class="setting-sub" id="subThreshold">Alert on pressure drop ≥</div></div>
       <input type="number" class="setting-input" id="threshInput" value="5" step="0.5" min="1" max="20">
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label" id="lblLanguage">Language</div><div class="setting-sub" id="subLanguage">Choose interface language</div></div>
+      <select id="langSelect" class="setting-input" style="cursor: pointer;">
+        <option value="en">English</option>
+        <option value="sv">Swedish (Svenska)</option>
+      </select>
     </div>
   </div>
 
   <div class="log-card">
-    <div class="log-title">Händelselogg</div>
-    <div class="log-empty" id="logEmpty">Inga händelser än</div>
+    <div class="log-title" id="logTitle">Event Log</div>
+    <div class="log-empty" id="logEmpty">No events yet</div>
     <div id="logList"></div>
   </div>
 
-  <p class="install-hint">💡 Dela-ikonen → "Lägg till på hemskärmen" för att installera som app</p>
+  <p class="install-hint" id="installHint">💡 Share icon → "Add to home screen" to install as app</p>
 </div>
 
 <script type="module">
@@ -323,6 +330,140 @@ const auth  = getAuth(fbApp);
 const COL   = "pressure_readings";
 const THIRTY_DAYS_MS = 30 * 24 * 3600 * 1000;
 
+// ─── Translations ────────────────────────────────────────────────────────────
+const translations = {
+  en: {
+    pageTitle: 'Pressure',
+    connecting: 'Connecting…',
+    rapidChange: 'Rapid Pressure Change',
+    rapidChangeMsg: 'Pressure is changing unusually fast.',
+    migraineRisk: 'Migraine Risk',
+    lowRisk: 'Low risk',
+    medRisk: 'Med risk',
+    highRisk: 'High risk',
+    riskLabelLow: 'Low',
+    riskLabelMed: 'Med',
+    riskLabelHigh: 'High',
+    deltaDay: 'Δ day (hPa)',
+    pressureLevel: 'Pressure level (hPa)',
+    startingMonitor: 'Starting monitoring to assess risk…',
+    currentPressure: 'Current Pressure',
+    waitingData: 'Waiting for data',
+    changeMin: 'Change/min',
+    lastHour: 'Last hour',
+    deltaSinceYesterday: 'Δ since yesterday',
+    min24h: 'Min (24h)',
+    max24h: 'Max (24h)',
+    history: 'History',
+    firebase: 'Firebase Firestore',
+    synced: 'Synced',
+    readings: 'Readings',
+    oldest: 'Oldest',
+    lastSaved: 'Last saved',
+    settings: 'Settings',
+    notifications: 'Notifications',
+    allowNotif: 'Allow push notifications',
+    migraineThreshold: 'Migraine threshold (hPa/day)',
+    alertOnPressure: 'Alert on pressure drop ≥',
+    language: 'Language',
+    chooseLanguage: 'Choose interface language',
+    eventLog: 'Event Log',
+    noEvents: 'No events yet',
+    installHint: '💡 Share icon → "Add to home screen" to install as app',
+    authError: '⚠️ Auth error: ',
+    couldNotReadHistory: '⚠️ Could not read history: ',
+    apiError: '⚠️ API error: ',
+    positionLocked: '📍 Position locked: ',
+    locationFailed: '⚠️ Location failed (',
+    lockingToFallback: ') – locking to fallback location',
+    barometer: '📡 Barometer sensor found',
+    usingAPI: '🌐 No sensor – using Open-Meteo API',
+    couldNotFetchPressure: '❌ Could not fetch pressure',
+    notificationEnabled: '🔔 Push notifications enabled',
+    notificationDenied: '⛔ Notifications denied',
+    firebaseConnected: '✅ Firebase Firestore connected',
+    serviceWorkerError: '⚠️ Service worker error: ',
+    swRegistered: '⚙️ Service worker registered',
+    swAlreadyActive: '✅ Service worker already active',
+    swUpdating: 'ℹ️ Service worker updating or waiting for activation',
+    riskFactors: 'Risk factors: ',
+    researchHighRisk: 'Research shows that pressure drops ≥5 hPa/day significantly increase migraine attacks.',
+    elevatedRiskDesc: 'Elevated migraine risk based on pressure level and change.',
+    someElevatedRisk: 'Some elevated risk – keep monitoring.',
+    stableRisk: 'Pressure is stable and within normal range. Low migraine risk right now.'
+  },
+  sv: {
+    pageTitle: 'Lufttryck',
+    connecting: 'Ansluter…',
+    rapidChange: 'Snabb tryckökning',
+    rapidChangeMsg: 'Lufttrycket förändras ovanligt snabbt.',
+    migraineRisk: 'Migränrisk',
+    lowRisk: 'Låg risk',
+    medRisk: 'Medel risk',
+    highRisk: 'Hög risk',
+    riskLabelLow: 'Låg',
+    riskLabelMed: 'Medel',
+    riskLabelHigh: 'Hög',
+    deltaDay: 'Δ dygn (hPa)',
+    pressureLevel: 'Trycknivå (hPa)',
+    startingMonitor: 'Startar övervakning för att bedöma risk…',
+    currentPressure: 'Lufttryck just nu',
+    waitingData: 'Väntar på data',
+    changeMin: 'Förändring/min',
+    lastHour: 'Senaste timmen',
+    deltaSinceYesterday: 'Δ sedan igår',
+    min24h: 'Min (24 tim)',
+    max24h: 'Max (24 tim)',
+    history: 'Historik',
+    firebase: 'Firebase Firestore',
+    synced: 'Synkad',
+    readings: 'Mätningar',
+    oldest: 'Äldsta',
+    lastSaved: 'Senast sparad',
+    settings: 'Inställningar',
+    notifications: 'Notiser',
+    allowNotif: 'Tillåt push-notiser',
+    migraineThreshold: 'Migräntröskel (hPa/dygn)',
+    alertOnPressure: 'Notis vid tryckfall per dygn ≥',
+    language: 'Språk',
+    chooseLanguage: 'Välj gränssnittsspråk',
+    eventLog: 'Händelselogg',
+    noEvents: 'Inga händelser än',
+    installHint: '💡 Dela-ikonen → "Lägg till på hemskärmen" för att installera som app',
+    authError: '⚠️ Auth-fel: ',
+    couldNotReadHistory: '⚠️ Kunde inte läsa historik: ',
+    apiError: '⚠️ API-fel: ',
+    positionLocked: '📍 Position låst: ',
+    locationFailed: '⚠️ Plats misslyckades (',
+    lockingToFallback: ') – låser till Vallentuna',
+    barometer: '📡 Barometersensor hittad',
+    usingAPI: '🌐 Ingen sensor – använder Open-Meteo API',
+    couldNotFetchPressure: '❌ Kunde inte hämta lufttryck',
+    notificationEnabled: '🔔 Push-notiser aktiverade',
+    notificationDenied: '⛔ Notiser nekades',
+    firebaseConnected: '✅ Firebase Firestore ansluten',
+    serviceWorkerError: '⚠️ Service worker-fel: ',
+    swRegistered: '⚙️ Service worker registrerad',
+    swAlreadyActive: '✅ Service worker redan aktiv',
+    swUpdating: 'ℹ️ Service worker uppdateras eller väntar på aktivering',
+    riskFactors: 'Riskfaktorer: ',
+    researchHighRisk: 'Forskning visar att tryckfall ≥5 hPa/dygn ökar migränanfall signifikant.',
+    elevatedRiskDesc: 'Förhöjd migränrisk baserat på trycknivå och förändring.',
+    someElevatedRisk: 'Viss förhöjd risk – håll koll på trycket.',
+    stableRisk: 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.'
+  }
+};
+
+let currentLang = localStorage.getItem('language') || 'en';
+const t = (key) => translations[currentLang]?.[key] || translations.en[key] || key;
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('language', lang);
+  document.documentElement.lang = lang;
+  updateAllText();
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 const state = {
   readings: [], running: false, timerId: null,
@@ -331,6 +472,42 @@ const state = {
   uid: null, lastSave: null, chartHours: 2, cachedChartData: null, historyCache: [],
   backendLogs: [], localLogs: []
 };
+
+function updateAllText() {
+  $('pageTitle').textContent = t('pageTitle');
+  $('alertTitle').textContent = t('rapidChange');
+  $('alertMsg').textContent = t('rapidChangeMsg');
+  $('migraineTitle').textContent = t('migraineRisk');
+  $('riskLabelLow').textContent = t('riskLabelLow');
+  $('riskLabelMed').textContent = t('riskLabelMed');
+  $('riskLabelHigh').textContent = t('riskLabelHigh');
+  $('rfDayLabel').textContent = t('deltaDay');
+  $('rfLevelLabel').textContent = t('pressureLevel');
+  $('pressureLabelNow').textContent = t('currentPressure');
+  $('labelChangeMin').textContent = t('changeMin');
+  $('labelLastHour').textContent = t('lastHour');
+  $('labelDayChange').textContent = t('deltaSinceYesterday');
+  $('labelMin24').textContent = t('min24h');
+  $('labelMax24').textContent = t('max24h');
+  $('chartTitle').textContent = t('history');
+  $('tab2h').textContent = '2h';
+  $('tab24h').textContent = '24h';
+  $('tab7d').textContent = t('eventLog') === 'Event Log' ? '7 days' : '7 dagar';
+  $('tab30d').textContent = t('eventLog') === 'Event Log' ? '30 days' : '30 dagar';
+  $('lblReadings').textContent = t('readings');
+  $('lblOldest').textContent = t('oldest');
+  $('lblLastSave').textContent = t('lastSaved');
+  $('settingsTitle').textContent = t('settings');
+  $('lblNotif').textContent = t('notifications');
+  $('subNotif').textContent = t('allowNotif');
+  $('lblThreshold').textContent = t('migraineThreshold');
+  $('subThreshold').textContent = t('alertOnPressure');
+  $('lblLanguage').textContent = t('language');
+  $('subLanguage').textContent = t('chooseLanguage');
+  $('logTitle').textContent = t('eventLog');
+  $('logEmpty').textContent = t('noEvents');
+  $('installHint').textContent = t('installHint');
+}
 
 const cfg = () => ({
   threshold: parseFloat($('threshInput').value) || 0.3,
@@ -344,7 +521,7 @@ async function ensureAuth() {
   try {
     const c = await signInAnonymously(auth);
     state.uid = c.user.uid;
-  } catch (e) { addLog('⚠️ Auth-fel: ' + e.message); }
+  } catch (e) { addLog(t('authError') + e.message); }
 }
 
 // ─── Firestore: hämta historik ───────────────────────────────────────────────
@@ -360,7 +537,7 @@ async function loadHistory(hours) {
       return { time: data.timestamp.toMillis(), hpa: data.hpa };
     });
   } catch (e) {
-    addLog('⚠️ Kunde inte läsa historik: ' + e.message);
+    addLog(t('couldNotReadHistory') + e.message);
     return [];
   }
 }
@@ -454,7 +631,7 @@ async function fetchApiHpa() {
     try {
       return await fetchHpaFromCoords(cachedLat, cachedLon);
     } catch (e) {
-      addLog(`⚠️ API-fel: ${e.message}`);
+      addLog(t('apiError') + e.message);
       return null;
     }
   }
@@ -464,19 +641,19 @@ async function fetchApiHpa() {
     const pos = await getPosition();
     cachedLat = pos.coords.latitude;
     cachedLon = pos.coords.longitude;
-    addLog(`📍 Position låst: ${cachedLat.toFixed(4)}, ${cachedLon.toFixed(4)}`);
+    addLog(t('positionLocked') + cachedLat.toFixed(4) + ', ' + cachedLon.toFixed(4));
     state.usingFallback = false;
     return await fetchHpaFromCoords(cachedLat, cachedLon);
   } catch (e1) {
     // GPS misslyckades – lås till Vallentuna som fast position
-    addLog(`⚠️ Plats misslyckades (${e1.message}) – låser till Vallentuna`);
+    addLog(t('locationFailed') + e1.message + t('lockingToFallback'));
     cachedLat = FALLBACK_LAT;
     cachedLon = FALLBACK_LON;
     state.usingFallback = true;
     try {
       return await fetchHpaFromCoords(cachedLat, cachedLon);
     } catch (e2) {
-      addLog(`⚠️ API-fel: ${e2.message}`);
+      addLog(t('apiError') + e2.message);
       return null;
     }
   }
@@ -556,7 +733,7 @@ function maybeNotify(hpa, dayChange, migraineLevel) {
 
   // Migränvarning baserat på dygnsförändring
   if (dayChange !== null && -dayChange >= thresh && migraineLevel !== 'low') {
-    title = migraineLevel === 'high' ? '🧠 Hög migränrisk!' : '🧠 Förhöjd migränrisk';
+    title = migraineLevel === 'high' ? '🧠 ' + t('highRisk') : '🧠 ' + t('medRisk');
     body = `Trycket har sjunkit ${(-dayChange).toFixed(1)} hPa senaste dygnet (nu: ${hpa.toFixed(1)} hPa)`;
   }
   // Absolut lågtrycksvarning
@@ -636,7 +813,7 @@ function updateUI() {
 
   card.className = `migraine-card risk-${level}`;
   pill.className  = `risk-pill ${level}`;
-  pill.textContent = level === 'high' ? '⚠ Hög risk' : level === 'med' ? '▲ Medel risk' : '✓ Låg risk';
+  pill.textContent = level === 'high' ? '⚠ ' + t('highRisk') : level === 'med' ? '▲ ' + t('medRisk') : '✓ ' + t('lowRisk');
   // Normalisera bredden så att visuell position matchar level-etiketten:
   // low (0-24) → 0-33%, med (25-59) → 34-66%, high (60-100) → 67-100%
   let fillPct;
@@ -660,16 +837,16 @@ function updateUI() {
   rfLvl.textContent = hpa.toFixed(1) + ' hPa';
   rfLvl.className = 'rf-val' + (hpa < 1005 ? ' bad' : hpa < 1010 ? ' warn' : ' ok');
 
-  // Beskrivning
+  // Description
   if (level === 'high') {
     desc.className = 'risk-desc bad';
-    desc.textContent = factors.length ? `Riskfaktorer: ${factors.join('. ')}. Forskning visar att tryckfall ≥5 hPa/dygn ökar migränanfall signifikant.` : 'Förhöjd migränrisk baserat på trycknivå och förändring.';
+    desc.textContent = factors.length ? t('riskFactors') + factors.join('. ') + '. ' + t('researchHighRisk') : t('elevatedRiskDesc');
   } else if (level === 'med') {
     desc.className = 'risk-desc warn';
-    desc.textContent = factors.length ? `${factors.join('. ')}.` : 'Viss förhöjd risk – håll koll på trycket.';
+    desc.textContent = factors.length ? factors.join('. ') + '.' : t('someElevatedRisk');
   } else {
     desc.className = 'risk-desc';
-    desc.textContent = 'Trycket är stabilt och inom normalt intervall. Låg migränrisk just nu.';
+    desc.textContent = t('stableRisk');
   }
 
   // Rita alltid om med rätt data för aktivt filter
@@ -889,7 +1066,7 @@ async function loadBackendLogs() {
 // ─── Tick ────────────────────────────────────────────────────────────────────
 async function tick() {
   const hpa = await getPressure();
-  if (hpa == null) { addLog('❌ Kunde inte hämta lufttryck'); return; }
+  if (hpa == null) { addLog(t('couldNotFetchPressure')); return; }
   state.readings.push({ time: Date.now(), hpa });
   // Behåll 30 timmar i minnet (för dygnsberäkning + marginal)
   // state.readings = senaste 2h för 2h-grafen
@@ -929,6 +1106,8 @@ async function enableNotifications() {
 // ─── Events ──────────────────────────────────────────────────────────────────
 $('notifToggle').addEventListener('change', e => { if (e.target.checked) enableNotifications(); else state.notifEnabled = false; });
 
+$('langSelect').addEventListener('change', e => { setLanguage(e.target.value); });
+
 document.querySelectorAll('.chart-tab').forEach(btn => {
   btn.addEventListener('click', async () => {
     document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
@@ -958,6 +1137,10 @@ window.addEventListener('resize', () => {
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 (async () => {
+  // Initialize language
+  $('langSelect').value = currentLang;
+  updateAllText();
+  
   await ensureAuth();
   await updateDbStats();
 
@@ -980,9 +1163,9 @@ window.addEventListener('resize', () => {
   await loadBackendLogs();
   setInterval(() => loadBackendLogs(), 60000);
 
-  $('dbBadge').textContent = '🔥 Ansluten';
+  $('dbBadge').textContent = '🔥 ' + t('pageTitle');
   $('dbBadge').className = 'badge green';
-  addLog('✅ Firebase Firestore ansluten');
+  addLog(t('firebaseConnected'));
 
   // ─── Service Worker ────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
@@ -992,15 +1175,15 @@ window.addEventListener('resize', () => {
 
     try {
       const reg = await navigator.serviceWorker.register('./sw.js');
-      addLog('⚙️ Service worker registrerad');
+      addLog(t('swRegistered'));
 
       if (reg.active) {
-        addLog('✅ Service worker redan aktiv');
+        addLog(t('swAlreadyActive'));
       } else if (reg.installing || reg.waiting) {
-        addLog('ℹ️ Service worker uppdateras eller väntar på aktivering');
+        addLog(t('swUpdating'));
       }
     } catch (e) {
-      addLog('⚠️ Service worker-fel: ' + e.message);
+      addLog(t('serviceWorkerError') + e.message);
     }
   }
 })();
