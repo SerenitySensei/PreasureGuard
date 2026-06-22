@@ -95,11 +95,9 @@ exports.collectPressureReading = onSchedule(
     memory: "256MiB"
   },
   async () => {
-    const sampledAt = bucketStart(new Date(), SAMPLE_INTERVAL_MINUTES);
-        logger.info("[COLLECT] Starting pressure collection cycle", {
-          timestamp: new Date().toISOString()
-        });
-        const sampledAt = bucketStart(new Date(), SAMPLE_INTERVAL_MINUTES);
+    logger.info("[COLLECT] Starting pressure collection cycle", {
+      timestamp: new Date().toISOString()
+    });
     const docRef = db.collection(COL).doc(docIdForBucket(sampledAt));
     const existing = await docRef.get();
 
@@ -193,11 +191,10 @@ exports.purgeOldReadings = onSchedule(
       if (snap.size < DELETE_BATCH_SIZE) break;
     }
 
-      cutoff: cutoff.toISOString(),
     logger.info("[PURGE] ✅ Purge completed", {
       cutoffDate: cutoff.toISOString(),
       totalBatches: batchCount,
-      totalDeleted
+      totalDeleted,
       completedAt: new Date().toISOString()
     });
   }
