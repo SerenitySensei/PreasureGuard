@@ -932,6 +932,9 @@ window.addEventListener('resize', () => {
   state.historyCache = hist30;
 
   if (state.readings.length > 1) drawChart(state.readings);
+  
+  // Populate UI with loaded data
+  updateUI();
 
   $('dbBadge').textContent = '🔥 Ansluten';
   $('dbBadge').className = 'badge green';
