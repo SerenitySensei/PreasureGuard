@@ -1,7 +1,7 @@
 {
-  "name": "Lufttryck – Tryckövervakning",
-  "short_name": "Lufttryck",
-  "description": "Övervakar lufttrycket och skickar notiser vid snabba förändringar",
+  "name": "Pressure – Pressure Monitoring",
+  "short_name": "Pressure",
+  "description": "Monitors air pressure and sends alerts on rapid changes",
   "id": "https://serenitysensei.github.io/PreasureGuard/",
   "start_url": "https://serenitysensei.github.io/PreasureGuard/",
   "scope": "/PreasureGuard/",
