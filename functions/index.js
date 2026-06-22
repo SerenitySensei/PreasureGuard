@@ -96,21 +96,33 @@ exports.collectPressureReading = onSchedule(
   },
   async () => {
     const sampledAt = bucketStart(new Date(), SAMPLE_INTERVAL_MINUTES);
+        logger.info("[COLLECT] Starting pressure collection cycle", {
+          timestamp: new Date().toISOString()
+        });
+        const sampledAt = bucketStart(new Date(), SAMPLE_INTERVAL_MINUTES);
     const docRef = db.collection(COL).doc(docIdForBucket(sampledAt));
     const existing = await docRef.get();
 
     if (existing.exists) {
-      logger.info("Pressure reading already exists for bucket", {
-        sampledAt: sampledAt.toISOString()
+      logger.info("[COLLECT] Reading already exists for this bucket", {
+        bucketTime: sampledAt.toISOString()
       });
       return;
     }
 
     const lat = configuredCoordinate("PRESSURE_LAT", DEFAULT_LAT);
     const lon = configuredCoordinate("PRESSURE_LON", DEFAULT_LON);
+    logger.info("[COLLECT] Fetching pressure data from Open-Meteo", { lat, lon });
     const hpa = await fetchPressureHpa(lat, lon);
+    logger.info("[COLLECT] Received pressure reading", { hpa });
+    
     const previous = await latestReadingBefore(sampledAt);
     const deltaPerMinute = changePerMinute(hpa, sampledAt, previous);
+    logger.info("[COLLECT] Calculated pressure change", {
+      deltaPerMinute: deltaPerMinute?.toFixed(6),
+      previousHpa: previous?.hpa,
+      previousTime: previous?.time.toISOString()
+    });
 
     await docRef.create({
       timestamp: admin.firestore.Timestamp.fromDate(sampledAt),
@@ -123,10 +135,11 @@ exports.collectPressureReading = onSchedule(
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    logger.info("Stored pressure reading", {
-      sampledAt: sampledAt.toISOString(),
+    logger.info("[COLLECT] ✅ Pressure reading saved to Firestore", {
+      timestamp: sampledAt.toISOString(),
       hpa,
-      source: "backend-open-meteo"
+      deltaPerMinute: deltaPerMinute?.toFixed(6),
+      location: `${lat.toFixed(4)}, ${lon.toFixed(4)}`
     });
   }
 );
@@ -146,6 +159,12 @@ exports.purgeOldReadings = onSchedule(
     const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
     const cutoffTs = admin.firestore.Timestamp.fromDate(cutoff);
     let totalDeleted = 0;
+    let batchCount = 0;
+
+    logger.info("[PURGE] Starting deletion of readings older than 30 days", {
+      cutoffDate: cutoff.toISOString(),
+      executedAt: new Date().toISOString()
+    });
 
     while (true) {
       const snap = await db.collection(COL)
@@ -154,18 +173,32 @@ exports.purgeOldReadings = onSchedule(
         .get();
 
       if (snap.empty) break;
+      if (snap.empty) {
+        logger.info("[PURGE] No more old readings found");
+        break;
+      }
 
       const batch = db.batch();
       snap.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
       totalDeleted += snap.size;
+      batchCount++;
+
+      logger.info("[PURGE] Deleted batch", {
+        batchNum: batchCount,
+        docsInBatch: snap.size,
+        totalDeletedSoFar: totalDeleted
+      });
 
       if (snap.size < DELETE_BATCH_SIZE) break;
     }
 
-    logger.info("Purged old pressure readings", {
       cutoff: cutoff.toISOString(),
+    logger.info("[PURGE] ✅ Purge completed", {
+      cutoffDate: cutoff.toISOString(),
+      totalBatches: batchCount,
       totalDeleted
+      completedAt: new Date().toISOString()
     });
   }
 );
